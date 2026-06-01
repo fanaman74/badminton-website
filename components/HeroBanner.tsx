@@ -7,11 +7,111 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
         .hero-panel-responsive {
           position: relative;
           overflow: hidden;
-          height: 60vh;
+          height: 65vh;
+          display: flex;
+          align-items: center;
         }
         @media (min-width: 768px) {
           .hero-panel-responsive {
             height: 100vh;
+          }
+        }
+        .hero-text-block {
+          position: relative;
+          z-index: 2;
+          padding: 32px 24px;
+          width: 100%;
+        }
+        @media (min-width: 768px) {
+          .hero-text-block {
+            padding: 48px 80px;
+            max-width: 60%;
+          }
+        }
+        @media (min-width: 1200px) {
+          .hero-text-block {
+            padding: 48px 120px;
+            max-width: 50%;
+          }
+        }
+        .hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 14px;
+          font-family: var(--font-body);
+          font-weight: 700;
+          font-size: 10px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #C6F03C;
+        }
+        @media (min-width: 768px) {
+          .hero-eyebrow {
+            font-size: 13px;
+            margin-bottom: 20px;
+          }
+        }
+        .hero-title-main {
+          font-size: 56px;
+        }
+        .hero-title-sub {
+          font-size: 46px;
+        }
+        @media (min-width: 768px) {
+          .hero-title-main {
+            font-size: 88px;
+          }
+          .hero-title-sub {
+            font-size: 72px;
+          }
+        }
+        .hero-squiggle {
+          width: 160px;
+          height: 10px;
+          margin-top: 8px;
+        }
+        @media (min-width: 768px) {
+          .hero-squiggle {
+            width: 280px;
+            height: 16px;
+            margin-top: 14px;
+          }
+        }
+        .hero-subtitle {
+          margin-top: 14px;
+          font-family: var(--font-body);
+          font-weight: 400;
+          font-size: 14px;
+          color: rgba(255,255,255,0.55);
+          line-height: 1.5;
+        }
+        @media (min-width: 768px) {
+          .hero-subtitle {
+            font-size: 18px;
+            margin-top: 24px;
+            max-width: 480px;
+          }
+        }
+        .hero-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 18px;
+          padding: 6px 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(198,240,60,0.3);
+          background: rgba(198,240,60,0.08);
+          font-family: var(--font-body);
+          font-weight: 700;
+          font-size: 12px;
+          color: rgba(255,255,255,0.75);
+        }
+        @media (min-width: 768px) {
+          .hero-chip {
+            font-size: 15px;
+            margin-top: 28px;
+            padding: 8px 18px;
           }
         }
       `}</style>
@@ -55,16 +155,10 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
         }}/>
 
         {/* ── Text block ── */}
-        <div style={{ position: "relative", zIndex: 2, padding: "52px 22px 32px" }}>
+        <div className="hero-text-block">
 
           {/* Eyebrow */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            marginBottom: 14,
-            fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 10,
-            letterSpacing: "0.18em", textTransform: "uppercase",
-            color: "#C6F03C",
-          }}>
+          <div className="hero-eyebrow">
             🏸 VUB Smashers
           </div>
 
@@ -73,39 +167,27 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
             fontFamily: "var(--font-display)", fontWeight: 900,
             lineHeight: 1.0, letterSpacing: "-0.03em",
           }}>
-            <div style={{ fontSize: 44, color: "#FFFFFF" }}>Play.</div>
-            <div style={{ fontSize: 44, color: "#00E5FF" }}>Train.</div>
-            <div style={{ fontSize: 44, color: "#C6F03C" }}>Win.</div>
-            <div style={{ fontSize: 36, color: "#FFFFFF", marginTop: 2 }}>Together.</div>
+            <div className="hero-title-main" style={{ color: "#FFFFFF" }}>Play.</div>
+            <div className="hero-title-main" style={{ color: "#00E5FF" }}>Train.</div>
+            <div className="hero-title-main" style={{ color: "#C6F03C" }}>Win.</div>
+            <div className="hero-title-sub" style={{ color: "#FFFFFF", marginTop: 4 }}>Together.</div>
           </div>
 
           {/* Lime squiggle underline */}
-          <div style={{ marginTop: 8 }}>
-            <svg width="152" height="9" viewBox="0 0 152 9">
+          <div className="hero-squiggle">
+            <svg viewBox="0 0 152 9" width="100%" height="100%">
               <path d="M2 6.5 Q38 1.5 76 4.5 Q114 7.5 150 3.5"
                 stroke="#C6F03C" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9"/>
             </svg>
           </div>
 
           {/* Subtitle */}
-          <div style={{
-            marginTop: 10,
-            fontFamily: "var(--font-body)", fontWeight: 400, fontSize: 13,
-            color: "rgba(255,255,255,0.5)", lineHeight: 1.5,
-          }}>
-            A community of passion, dedication<br/>and love for badminton.
+          <div className="hero-subtitle">
+            A community of passion, dedication and love for badminton.
           </div>
 
           {/* Personalised chip */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            marginTop: 16, padding: "6px 14px",
-            borderRadius: 999,
-            border: "1px solid rgba(198,240,60,0.3)",
-            background: "rgba(198,240,60,0.08)",
-            fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12,
-            color: "rgba(255,255,255,0.75)",
-          }}>
+          <div className="hero-chip">
             👋 Hey, {name.split(" ")[0]}!
           </div>
         </div>
