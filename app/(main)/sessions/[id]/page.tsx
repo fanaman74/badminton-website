@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserId } from "@/lib/auth";
 import { RsvpButtons } from "@/components/RsvpButtons";
 import { CourtMeter } from "@/components/ui/CourtMeter";
+import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import type { RsvpStatus, Session } from "@/types/database";
 
 interface Props {
@@ -77,12 +78,15 @@ export default async function SessionDetailPage({ params }: Props) {
           {fullDate}
         </div>
         {isAdmin ? (
-          <Link href={`/admin/sessions/${id}/edit`} style={{
-            width: 42, height: 42, borderRadius: 999, border: "1px solid var(--line)",
-            background: "var(--surface)", color: "var(--ink)", display: "flex",
-            alignItems: "center", justifyContent: "center", textDecoration: "none", fontSize: 12,
-            fontFamily: "var(--font-body)", fontWeight: 700,
-          }}>Edit</Link>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link href={`/admin/sessions/${id}/edit`} style={{
+              width: 42, height: 42, borderRadius: 999, border: "1px solid var(--line)",
+              background: "var(--surface)", color: "var(--ink)", display: "flex",
+              alignItems: "center", justifyContent: "center", textDecoration: "none", fontSize: 12,
+              fontFamily: "var(--font-body)", fontWeight: 700,
+            }}>Edit</Link>
+            <DeleteSessionButton sessionId={id} />
+          </div>
         ) : <div style={{ width: 42 }} />}
       </div>
 

@@ -77,3 +77,27 @@ export async function updateSessionStatusAction(
 
   return { success: true };
 }
+
+export async function deleteSessionAction(
+  sessionId: string
+): Promise<{ error?: string; success?: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") {
+    return { error: "Not authorized" };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("sessions")
+    .delete()
+    .eq("id", sessionId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/sessions");
+  return { success: true };
+}
