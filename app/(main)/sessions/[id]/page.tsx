@@ -5,6 +5,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { RsvpButtons } from "@/components/RsvpButtons";
 import { CourtMeter } from "@/components/ui/CourtMeter";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
+import { SessionComments } from "@/components/SessionComments";
 import type { RsvpStatus, Session } from "@/types/database";
 
 interface Props {
@@ -34,6 +35,12 @@ export default async function SessionDetailPage({ params }: Props) {
     .order("created_at", { ascending: true });
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", userId!).single();
+
+  const { data: comments } = await supabase
+    .from("session_comments")
+    .select("id, body, created_at, author:profiles(name)")
+    .eq("session_id", id)
+    .order("created_at", { ascending: true });
 
   const myRsvp = rsvps?.find((r) => r.user_id === userId);
   const myStatus = (myRsvp?.status as RsvpStatus) ?? null;
@@ -228,6 +235,20 @@ export default async function SessionDetailPage({ params }: Props) {
             );
           })}
         </div>
+      </div>
+
+        {/* Admin notes / comments */}
+        <SessionComments
+          sessionId={id}
+          comments={(comments ?? []).map((c) => ({
+            id: c.id,
+            body: c.body,
+            created_at: c.created_at,
+            author: Array.isArray(c.author) ? c.author[0] ?? null : c.author ?? null,
+          }))}
+          isAdmin={isAdmin}
+          currentUserId={userId!}
+        />
       </div>
 
       <RsvpButtons sessionId={id} currentStatus={myStatus} isFull={isFull} />
