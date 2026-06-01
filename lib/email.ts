@@ -196,16 +196,21 @@ export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise
 
   const copy = STATUS_COPY[data.status];
 
-  // Fire-and-forget: don't let email failure block the RSVP
   try {
-    await client.emails.send({
+    const result = await client.emails.send({
       from: "VUB Smashers <onboarding@resend.dev>",
       to: data.toEmail,
       subject: `${copy.subject} — ${formatDate(data.session.date)}`,
       html: buildHtml(data),
     });
+
+    if (result.error) {
+      console.error("[email] Resend API error:", result.error);
+    } else {
+      console.log("[email] Sent to", data.toEmail, "id:", result.data?.id);
+    }
   } catch (err) {
-    // Log but never throw — email is non-critical
+    // Never throw — email is non-critical
     console.error("[email] Failed to send RSVP confirmation:", err);
   }
 }

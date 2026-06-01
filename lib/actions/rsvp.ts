@@ -82,7 +82,7 @@ export async function updateRsvp(
           .single();
 
         if (promotedProfile?.email) {
-          sendRsvpConfirmationEmail({
+          await sendRsvpConfirmationEmail({
             toEmail: promotedProfile.email,
             toName: promotedProfile.name,
             status: "IN",
@@ -113,7 +113,7 @@ export async function updateRsvp(
       .single();
 
     if (profile?.email) {
-      sendRsvpConfirmationEmail({
+      await sendRsvpConfirmationEmail({
         toEmail: profile.email,
         toName: profile.name,
         status: finalStatus as "IN" | "MAYBE" | "WAITLIST",
