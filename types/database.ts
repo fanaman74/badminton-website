@@ -204,6 +204,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      session_comments: {
+        Row: {
+          id: string;
+          session_id: string;
+          author_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          author_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_comments_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_comments_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       user_sessions: {
         Row: {
           id: string;
@@ -259,6 +298,7 @@ export type Expense = Database["public"]["Tables"]["expenses"]["Row"];
 export type Match = Database["public"]["Tables"]["matches"]["Row"];
 export type UserSession = Database["public"]["Tables"]["user_sessions"]["Row"];
 
+export type SessionComment = Database["public"]["Tables"]["session_comments"]["Row"];
 export type RsvpStatus = "IN" | "OUT" | "MAYBE" | "WAITLIST";
 export type SessionStatus = "UPCOMING" | "COMPLETED" | "CANCELLED";
 export type UserRole = "ADMIN" | "PLAYER";

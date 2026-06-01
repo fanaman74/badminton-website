@@ -235,7 +235,6 @@ export default async function SessionDetailPage({ params }: Props) {
             );
           })}
         </div>
-      </div>
 
         {/* Admin notes / comments */}
         <SessionComments
