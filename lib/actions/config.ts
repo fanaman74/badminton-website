@@ -70,10 +70,14 @@ export async function createNextSessionAction(): Promise<{ error?: string; id?: 
   const [h, m] = config.start_time.split(":").map(Number);
   sessionDate.setHours(h, m, 0, 0);
 
+  // Adjust for timezone offset to store as UTC
+  const tzOffset = sessionDate.getTimezoneOffset() * 60000;
+  const sessionDateUtc = new Date(sessionDate.getTime() - tzOffset);
+
   const { data, error } = await supabase
     .from("sessions")
     .insert({
-      date: sessionDate.toISOString(),
+      date: sessionDateUtc.toISOString(),
       location_name: config.location_name,
       location_maps_url: config.location_maps_url,
       courts_booked: config.courts,
