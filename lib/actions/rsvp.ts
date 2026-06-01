@@ -2,19 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserId } from "@/lib/auth";
 import type { RsvpStatus } from "@/types/database";
 
 export async function updateRsvp(
   sessionId: string,
   newStatus: "IN" | "OUT" | "MAYBE"
 ): Promise<{ error?: string; status?: RsvpStatus }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "Not authenticated" };
 
   const { data: session } = await supabase
     .from("sessions")
@@ -31,7 +29,7 @@ export async function updateRsvp(
     .select("*", { count: "exact", head: true })
     .eq("session_id", sessionId)
     .eq("status", "IN")
-    .neq("user_id", user.id);
+    .neq("user_id", userId);
 
   const inCount = currentInCount ?? 0;
 
@@ -41,7 +39,7 @@ export async function updateRsvp(
   }
 
   const { error } = await supabase.from("rsvps").upsert(
-    { user_id: user.id, session_id: sessionId, status: finalStatus },
+    { user_id: userId, session_id: sessionId, status: finalStatus },
     { onConflict: "user_id,session_id" }
   );
 

@@ -3,23 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserId, getCurrentUser } from "@/lib/auth";
 
 export async function createSessionAction(
   _prevState: { error: string } | void | undefined,
   formData: FormData
 ): Promise<{ error: string } | void> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
   const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if ((profile as { role: string } | null)?.role !== "ADMIN") return { error: "Not authorized" };
+  if (!user || user.role !== "ADMIN") {
+    return { error: "Not authorized" };
+  }
 
   const dateStr = formData.get("date") as string;
   const timeStr = formData.get("time") as string;
@@ -42,7 +40,7 @@ export async function createSessionAction(
       location_maps_url: locationMapsUrl,
       courts_booked: courtsBooked,
       max_capacity: maxCapacity,
-      created_by: user.id,
+      created_by: userId,
     })
     .select("id")
     .single();
@@ -57,18 +55,15 @@ export async function updateSessionStatusAction(
   sessionId: string,
   status: "COMPLETED" | "CANCELLED"
 ): Promise<{ error?: string; success?: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") {
+    return { error: "Not authorized" };
+  }
+
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if ((profile as { role: string } | null)?.role !== "ADMIN") return { error: "Not authorized" };
 
   const { error } = await supabase
     .from("sessions")
