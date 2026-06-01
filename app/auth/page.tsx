@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function AuthPage() {
   const [state, formAction, isPending] = useActionState(
     validateInviteCodeAction,
-    undefined
+    { error: undefined } as { error?: string }
   );
 
   return (

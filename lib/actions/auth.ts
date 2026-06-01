@@ -13,9 +13,9 @@ function generateSessionToken(): string {
 }
 
 export async function validateInviteCodeAction(
-  _prevState: { error: string } | void | undefined,
+  _prevState: { error?: string } | undefined,
   formData: FormData
-): Promise<{ error?: string }> {
+): Promise<{ error?: string } | undefined> {
   const inviteCode = formData.get("inviteCode") as string;
 
   if (!inviteCode) {
