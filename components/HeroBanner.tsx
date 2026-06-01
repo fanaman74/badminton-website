@@ -25,13 +25,13 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
         }
         @media (min-width: 768px) {
           .hero-text-block {
-            padding: 48px 140px;
-            max-width: 50%;
+            padding: 48px 80px;
+            max-width: 60%;
           }
         }
         @media (min-width: 1200px) {
           .hero-text-block {
-            padding: 48px 120px;
+            padding: 48px 140px;
             max-width: 50%;
           }
         }
