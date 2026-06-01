@@ -45,3 +45,39 @@ export async function updateProfileAction(
   revalidatePath("/you");
   return { success: true };
 }
+
+export async function updateUserRoleAction(
+  targetUserId: string,
+  newRole: "ADMIN" | "PLAYER"
+): Promise<{ error?: string; success?: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
+
+  // Check if current user is admin
+  const { data: currentUser } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  if (!currentUser || currentUser.role !== "ADMIN") {
+    return { error: "Not authorized" };
+  }
+
+  // Prevent user from changing their own role to PLAYER
+  if (userId === targetUserId && newRole === "PLAYER") {
+    return { error: "You cannot remove your own admin status" };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: newRole })
+    .eq("id", targetUserId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/team");
+  return { success: true };
+}
