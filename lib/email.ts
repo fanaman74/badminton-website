@@ -197,9 +197,14 @@ export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise
   const copy = STATUS_COPY[data.status];
 
   try {
+    // On free tier, Resend only allows sending to your account email
+    // unless you verify a domain. Use RESEND_TEST_EMAIL to test, or verify
+    // a domain at resend.com/domains and update the 'from' address
+    const toEmail = process.env.RESEND_TEST_EMAIL || data.toEmail;
+
     const result = await client.emails.send({
       from: "VUB Smashers <onboarding@resend.dev>",
-      to: data.toEmail,
+      to: toEmail,
       subject: `${copy.subject} — ${formatDate(data.session.date)}`,
       html: buildHtml(data),
     });
@@ -207,7 +212,7 @@ export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise
     if (result.error) {
       console.error("[email] Resend API error:", result.error);
     } else {
-      console.log("[email] Sent to", data.toEmail, "id:", result.data?.id);
+      console.log("[email] Sent to", toEmail, "(user:", data.toEmail + ")", "id:", result.data?.id);
     }
   } catch (err) {
     // Never throw — email is non-critical
