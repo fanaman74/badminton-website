@@ -18,7 +18,7 @@ export default async function YouPage() {
       <div style={{ padding: "48px 20px 14px" }}>
         <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
           letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brand)", marginBottom: 5 }}>
-          Eastside Smashers
+          VUB Smashers
         </div>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 32,
           lineHeight: 1, letterSpacing: "-0.02em", color: "var(--ink)" }}>You</div>

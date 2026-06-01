@@ -29,7 +29,7 @@ export default async function TeamPage() {
       <div style={{ padding: "48px 20px 12px" }}>
         <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
           letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brand)", marginBottom: 5 }}>
-          Eastside Smashers
+          VUB Smashers
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 32,

@@ -18,7 +18,7 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Eastside Smashers",
+  title: "VUB Smashers",
   description: "Team scheduling, RSVPs and sessions",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };

@@ -19,7 +19,7 @@ export default function AuthPage() {
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🏸</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 28,
-            color: "var(--ink)", letterSpacing: "-0.02em" }}>Eastside Smashers</div>
+            color: "var(--ink)", letterSpacing: "-0.02em" }}>VUB Smashers</div>
           <div style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 14,
             color: "var(--muted)", marginTop: 6 }}>Sign in with your team email</div>
         </div>
