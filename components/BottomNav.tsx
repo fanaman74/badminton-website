@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/sessions", label: "Sessions", icon: CalendarIcon },
   { href: "/team",     label: "Team",     icon: UsersIcon },
+  { href: "/you",      label: "You",      icon: UserIcon },
   { href: "/finances", label: "Wallet",   icon: WalletIcon,   disabled: true },
 ];
 
@@ -56,6 +57,9 @@ function CalendarIcon({ size = 24, active }: { size?: number; active?: boolean }
 }
 function UsersIcon({ size = 24, active }: { size?: number; active?: boolean }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 5.2a3.4 3.4 0 0 1 0 6.4M17 14.4a5.5 5.5 0 0 1 3.5 5.1"/></svg>;
+}
+function UserIcon({ size = 24, active }: { size?: number; active?: boolean }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20a6 6 0 0 1 12 0"/></svg>;
 }
 function WalletIcon({ size = 24 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16.5 14.5h.01"/></svg>;
