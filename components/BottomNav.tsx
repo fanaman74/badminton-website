@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { href: "/sessions", label: "Sessions", icon: CalendarIcon },
+  { href: "/history",  label: "History",  icon: HistoryIcon },
   { href: "/team",     label: "Team",     icon: UsersIcon },
   { href: "/you",      label: "You",      icon: UserIcon },
-  { href: "/finances", label: "Wallet",   icon: WalletIcon,   disabled: true },
 ];
 
 export function BottomNav() {
@@ -22,19 +22,6 @@ export function BottomNav() {
       {tabs.map((t) => {
         const on = pathname.startsWith(t.href);
         const Ic = t.icon;
-        if (t.disabled) {
-          return (
-            <div key={t.href} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-              color: "color-mix(in srgb, var(--faint) 60%, transparent)",
-              padding: "4px 0", fontFamily: "var(--font-body)", fontWeight: 700,
-              fontSize: 10.5, letterSpacing: "0.02em", cursor: "not-allowed",
-            }}>
-              <Ic size={23} />
-              {t.label}
-            </div>
-          );
-        }
         return (
           <Link key={t.href} href={t.href} style={{
             display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
@@ -61,6 +48,6 @@ function UsersIcon({ size = 24, active }: { size?: number; active?: boolean }) {
 function UserIcon({ size = 24, active }: { size?: number; active?: boolean }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20a6 6 0 0 1 12 0"/></svg>;
 }
-function WalletIcon({ size = 24 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16.5 14.5h.01"/></svg>;
+function HistoryIcon({ size = 24, active }: { size?: number; active?: boolean }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>;
 }
