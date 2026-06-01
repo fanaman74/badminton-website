@@ -1,6 +1,11 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazily initialised so a missing key doesn't crash the module at import time
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 interface SessionEmailData {
   toEmail: string;
@@ -183,11 +188,17 @@ function buildHtml(data: SessionEmailData): string {
 }
 
 export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise<void> {
+  const client = getResend();
+  if (!client) {
+    console.warn("[email] RESEND_API_KEY not set — skipping email");
+    return;
+  }
+
   const copy = STATUS_COPY[data.status];
 
   // Fire-and-forget: don't let email failure block the RSVP
   try {
-    await resend.emails.send({
+    await client.emails.send({
       from: "VUB Smashers <onboarding@resend.dev>",
       to: data.toEmail,
       subject: `${copy.subject} — ${formatDate(data.session.date)}`,
