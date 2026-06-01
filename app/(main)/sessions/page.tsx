@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserId } from "@/lib/auth";
 import { SessionCard } from "@/components/SessionCard";
 import type { RsvpStatus } from "@/types/database";
 
 export default async function SessionsPage() {
+  const userId = await getCurrentUserId();
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: sessions } = await supabase
     .from("sessions")
@@ -18,7 +18,7 @@ export default async function SessionsPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user!.id)
+    .eq("id", userId!)
     .single();
 
   const { data: inRsvps } = await supabase
@@ -29,7 +29,7 @@ export default async function SessionsPage() {
   const { data: myRsvps } = await supabase
     .from("rsvps")
     .select("session_id, status")
-    .eq("user_id", user!.id);
+    .eq("user_id", userId!);
 
   const inCountBySession = (inRsvps ?? []).reduce<Record<string, number>>(
     (acc, r) => ({ ...acc, [r.session_id]: (acc[r.session_id] ?? 0) + 1 }),

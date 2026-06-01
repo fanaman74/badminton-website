@@ -1,10 +1,11 @@
 /**
- * Seed script — dev-only. Creates 5 users, 2 sessions, and sample RSVPs.
+ * Seed script — dev-only. Creates 5 players, 2 sessions, and sample RSVPs.
  * Run: npm run seed
  *
  * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
  */
 import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 
@@ -23,11 +24,11 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 const players = [
-  { name: "Admin Alex", email: "admin@team.com", password: "Admin1234!", role: "ADMIN" },
-  { name: "Ben Tan", email: "ben@team.com", password: "Player1234!", role: "PLAYER" },
-  { name: "Clara Lim", email: "clara@team.com", password: "Player1234!", role: "PLAYER" },
-  { name: "David Koh", email: "david@team.com", password: "Player1234!", role: "PLAYER" },
-  { name: "Emma Wong", email: "emma@team.com", password: "Player1234!", role: "PLAYER" },
+  { name: "Admin Alex", role: "ADMIN" },
+  { name: "Ben Tan", role: "PLAYER" },
+  { name: "Clara Lim", role: "PLAYER" },
+  { name: "David Koh", role: "PLAYER" },
+  { name: "Emma Wong", role: "PLAYER" },
 ];
 
 function nextWeekend(offset = 0): Date {
@@ -42,44 +43,33 @@ function nextWeekend(offset = 0): Date {
 async function seed() {
   console.log("🌱 Seeding database...\n");
 
-  const userIds: Record<string, string> = {};
+  const userIds: string[] = [];
 
-  // Create auth users
+  // Create profiles
   for (const player of players) {
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: player.email,
-      password: player.password,
-      email_confirm: true,
-      user_metadata: { name: player.name },
-    });
+    const userId = randomUUID();
+    const { error } = await supabase
+      .from("profiles")
+      .insert({
+        id: userId,
+        name: player.name,
+        role: player.role,
+      });
 
     if (error) {
-      if (error.message.includes("already been registered")) {
-        // Find existing user
-        const { data: existing } = await supabase.auth.admin.listUsers();
-        const found = existing?.users.find((u) => u.email === player.email);
-        if (found) userIds[player.email] = found.id;
-        console.log(`  ↩ ${player.name} already exists, skipping`);
-      } else {
-        console.error(`  ✗ Failed to create ${player.name}:`, error.message);
-      }
+      console.error(`  ✗ Failed to create ${player.name}:`, error.message);
       continue;
     }
 
-    userIds[player.email] = data.user.id;
-    console.log(`  ✓ Created user: ${player.name}`);
-
-    // Set role for admin
-    if (player.role === "ADMIN") {
-      await supabase.from("profiles").update({ role: "ADMIN" }).eq("id", data.user.id);
-    }
+    userIds.push(userId);
+    console.log(`  ✓ Created player: ${player.name} (${player.role})`);
   }
 
   // Create 2 sessions
   const session1Date = nextWeekend(0);
   const session2Date = nextWeekend(1);
 
-  const adminId = userIds["admin@team.com"];
+  const adminId = userIds[0];
 
   const { data: sessions, error: sessionsError } = await supabase
     .from("sessions")
@@ -114,20 +104,20 @@ async function seed() {
 
   // RSVPs for session 1 (2 courts, max 8): 5 IN, 1 MAYBE
   const s1Rsvps = [
-    { user_id: adminId, status: "IN" },
-    { user_id: userIds["ben@team.com"], status: "IN" },
-    { user_id: userIds["clara@team.com"], status: "IN" },
-    { user_id: userIds["david@team.com"], status: "IN" },
-    { user_id: userIds["emma@team.com"], status: "MAYBE" },
+    { user_id: userIds[0], status: "IN" },
+    { user_id: userIds[1], status: "IN" },
+    { user_id: userIds[2], status: "IN" },
+    { user_id: userIds[3], status: "IN" },
+    { user_id: userIds[4], status: "MAYBE" },
   ];
 
   // RSVPs for session 2 (1 court, max 4): 4 IN (full), 1 WAITLIST
   const s2Rsvps = [
-    { user_id: adminId, status: "IN" },
-    { user_id: userIds["ben@team.com"], status: "IN" },
-    { user_id: userIds["clara@team.com"], status: "IN" },
-    { user_id: userIds["david@team.com"], status: "IN" },
-    { user_id: userIds["emma@team.com"], status: "WAITLIST" },
+    { user_id: userIds[0], status: "IN" },
+    { user_id: userIds[1], status: "IN" },
+    { user_id: userIds[2], status: "IN" },
+    { user_id: userIds[3], status: "IN" },
+    { user_id: userIds[4], status: "WAITLIST" },
   ];
 
   await supabase.from("rsvps").insert(
@@ -139,9 +129,10 @@ async function seed() {
 
   console.log("  ✓ Created RSVPs\n");
   console.log("✅ Seed complete!\n");
-  console.log("Test accounts:");
-  console.log("  Admin:  admin@team.com / Admin1234!");
-  console.log("  Player: ben@team.com   / Player1234!");
+  console.log("To log in:");
+  console.log("  1. Visit http://localhost:3000/auth");
+  console.log("  2. Enter invite code: smash2024");
+  console.log("  3. You'll be assigned a random player (or create a new one)");
 }
 
 seed().catch((e) => {

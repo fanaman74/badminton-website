@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MapPin, ExternalLink, ArrowLeft, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserId } from "@/lib/auth";
 import { RsvpButtons } from "@/components/RsvpButtons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,9 +21,8 @@ const statusColors: Record<RsvpStatus, string> = {
 
 export default async function SessionDetailPage({ params }: Props) {
   const { id } = await params;
+  const userId = await getCurrentUserId();
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: session } = await supabase
     .from("sessions")
@@ -43,10 +43,10 @@ export default async function SessionDetailPage({ params }: Props) {
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user!.id)
+    .eq("id", userId!)
     .single();
 
-  const myRsvp = rsvps?.find((r) => r.user_id === user!.id);
+  const myRsvp = rsvps?.find((r) => r.user_id === userId);
   const myStatus = (myRsvp?.status as RsvpStatus) ?? null;
 
   const inPlayers = rsvps?.filter((r) => r.status === "IN") ?? [];
@@ -145,14 +145,14 @@ export default async function SessionDetailPage({ params }: Props) {
         <PlayerSection
           title={`Going (${inCount})`}
           players={inPlayers}
-          currentUserId={user!.id}
+          currentUserId={userId!}
           statusClass={statusColors.IN}
         />
         {waitlistPlayers.length > 0 && (
           <PlayerSection
             title={`Waitlist (${waitlistPlayers.length})`}
             players={waitlistPlayers}
-            currentUserId={user!.id}
+            currentUserId={userId!}
             statusClass={statusColors.WAITLIST}
           />
         )}
@@ -160,7 +160,7 @@ export default async function SessionDetailPage({ params }: Props) {
           <PlayerSection
             title={`Maybe (${maybePlayers.length})`}
             players={maybePlayers}
-            currentUserId={user!.id}
+            currentUserId={userId!}
             statusClass={statusColors.MAYBE}
           />
         )}
@@ -168,7 +168,7 @@ export default async function SessionDetailPage({ params }: Props) {
           <PlayerSection
             title={`Can't go (${outPlayers.length})`}
             players={outPlayers}
-            currentUserId={user!.id}
+            currentUserId={userId!}
             statusClass={statusColors.OUT}
           />
         )}

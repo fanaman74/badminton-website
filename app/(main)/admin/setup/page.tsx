@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserId } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 async function promoteToAdminAction() {
   "use server";
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/auth");
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
 
   // Only works if no admins exist yet
   const { count } = await supabase
@@ -17,7 +19,7 @@ async function promoteToAdminAction() {
 
   if ((count ?? 0) > 0) redirect("/sessions");
 
-  await supabase.from("profiles").update({ role: "ADMIN" as const }).eq("id", user.id);
+  await supabase.from("profiles").update({ role: "ADMIN" as const }).eq("id", userId);
   redirect("/sessions");
 }
 

@@ -15,9 +15,9 @@ A mobile-first web app to replace messy chat groups and manage your badminton te
 
 - **Framework**: Next.js 14+ (App Router)
 - **Styling**: Tailwind CSS + shadcn/ui components
-- **Database**: Supabase (Postgres) with Row Level Security
+- **Database**: Supabase (Postgres)
 - **Icons**: Lucide React
-- **Auth**: Supabase Auth (email + password)
+- **Auth**: Custom session system (invite-code-only, httpOnly cookies)
 - **Deployment**: Railway
 
 ## Getting Started
@@ -46,30 +46,33 @@ A mobile-first web app to replace messy chat groups and manage your badminton te
    ```
 
 3. **Database migrations**:
-   Run the SQL migrations in Supabase dashboard:
-   - `supabase/migrations/001_schema.sql` — Tables & triggers
+   Run the SQL migrations in Supabase dashboard in order:
+   - `supabase/migrations/001_schema.sql` — Core tables (profiles, sessions, rsvps, etc.)
    - `supabase/migrations/002_rls.sql` — Row Level Security policies
+   - `supabase/migrations/003_simplify_auth.sql` — Custom session system
+   - `supabase/migrations/004_update_rls.sql` — Disable RLS (security is server-side)
 
-4. **Seed test data**:
-   ```bash
-   npm run seed
-   ```
-   Creates 5 test users and 2 sample sessions.
-
-5. **Start dev server**:
+4. **Start dev server**:
    ```bash
    npm run dev
    ```
-   Visit [http://localhost:3000](http://localhost:3000)
+   Visit [http://localhost:3000](http://localhost:3000) → you'll be redirected to `/auth`
 
-## Test Accounts
+5. **Join with invite code**:
+   Enter: `smash2024` (or your custom `INVITE_CODE`)
+   - Player name is auto-generated (e.g., "Player A3K5X")
+   - Account created automatically
+   - Logged in and redirected to sessions
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@team.com` | `Admin1234!` |
-| Player | `ben@team.com` | `Player1234!` |
+## Auth
 
-**Invite Code** (for new registrations): `smash2024`
+**Simplified invite-code-only system:**
+- No email registration needed
+- Single password field on `/auth`
+- Password = invite code (from `INVITE_CODE` env var)
+- Player names auto-generated on first entry
+- Session stored in httpOnly cookie (valid 30 days)
+- Admin role must be set manually via database or seed script
 
 ## Project Structure
 
