@@ -22,6 +22,7 @@ const TEAM_MEMBERS = [
   { name: "Piotr Banski",      email: "piotr.banski@ec.europa.eu",          role: "PLAYER" as const },
   { name: "A. Bootland",       email: "abootland@hotmail.com",              role: "PLAYER" as const },
   { name: "Patryk Lozinski",   email: "patryk.lozinski@gmail.com",          role: "PLAYER" as const },
+  { name: "Marcel Grijsen",    email: "marcel.grijsen@sita.aero",            role: "PLAYER" as const },
 ];
 
 export default function SetupPage() {
