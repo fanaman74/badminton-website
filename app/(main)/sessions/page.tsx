@@ -31,6 +31,10 @@ export default async function SessionsPage() {
     .select("session_id, status")
     .eq("user_id", userId!);
 
+  const { count: memberCount } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact", head: true });
+
   const inCountBySession = (inRsvps ?? []).reduce<Record<string, number>>(
     (acc, r) => ({ ...acc, [r.session_id]: (acc[r.session_id] ?? 0) + 1 }),
     {}
@@ -47,7 +51,7 @@ export default async function SessionsPage() {
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
       {/* Hero banner */}
-      <HeroBanner name={profile?.name ?? "Player"} />
+      <HeroBanner name={profile?.name ?? "Player"} memberCount={memberCount ?? 0} />
 
       {/* Sessions header row */}
       <div style={{ padding: "16px 20px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
