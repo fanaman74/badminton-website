@@ -6,7 +6,7 @@ import { updateUserRoleAction } from "@/lib/actions/profile";
 interface TeamMemberCardProps {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   role: "ADMIN" | "PLAYER";
   isCurrentUser: boolean;
   currentUserIsAdmin: boolean;
