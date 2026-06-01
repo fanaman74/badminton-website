@@ -149,12 +149,6 @@ export function HeroBanner({ name }: { name: string }) {
           background: "linear-gradient(180deg, rgba(4,8,20,0.65) 0%, transparent 25%)",
         }}/>
 
-        {/* Bottom fade into stats bar */}
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: "linear-gradient(0deg, rgba(4,8,20,0.85) 0%, transparent 28%)",
-        }}/>
-
         {/* ── Text block ── */}
         <div className="hero-text-block">
 
