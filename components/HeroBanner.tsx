@@ -3,13 +3,21 @@
 export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCount?: number }) {
   return (
     <div style={{ position: "relative", marginBottom: 4 }}>
+      <style>{`
+        .hero-panel-responsive {
+          position: relative;
+          overflow: hidden;
+          height: 60vh;
+        }
+        @media (min-width: 768px) {
+          .hero-panel-responsive {
+            height: 100vh;
+          }
+        }
+      `}</style>
 
       {/* ── Main hero panel ── */}
-      <div style={{
-        position: "relative",
-        overflow: "hidden",
-        minHeight: 320,
-      }}>
+      <div className="hero-panel-responsive">
 
         {/* Full-bleed background photo */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
