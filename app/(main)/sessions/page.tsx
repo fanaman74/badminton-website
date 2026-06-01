@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserId } from "@/lib/auth";
 import { SessionCard } from "@/components/SessionCard";
@@ -42,40 +41,74 @@ export default async function SessionsPage() {
   );
 
   const isAdmin = profile?.role === "ADMIN";
+  const list = sessions ?? [];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Sessions</h1>
+    <div style={{ minHeight: "100%", background: "var(--bg)" }}>
+      {/* Header */}
+      <div style={{ padding: "48px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
+            letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brand)", marginBottom: 5 }}>
+            Eastside Smashers
+          </div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 32,
+            lineHeight: 1, letterSpacing: "-0.02em", color: "var(--ink)" }}>Sessions</div>
+        </div>
         {isAdmin && (
-          <Link
-            href="/admin/sessions/new"
-            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
-          >
-            <Plus size={16} />
-            New session
+          <Link href="/admin/sessions/new" style={{
+            width: 42, height: 42, borderRadius: 999, border: "1px solid var(--line)",
+            background: "var(--surface)", color: "var(--ink)", display: "flex",
+            alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0,
+          }}>
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
           </Link>
         )}
       </div>
 
-      {!sessions || sessions.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <p className="text-lg font-medium">No upcoming sessions</p>
-          {isAdmin && (
-            <p className="text-sm mt-1">Create the first one using the button above.</p>
-          )}
+      {list.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "64px 20px", color: "var(--muted)",
+          fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 15 }}>
+          No upcoming sessions
+          {isAdmin && <p style={{ marginTop: 8, fontSize: 13, color: "var(--faint)" }}>Create the first one using the + button above.</p>}
         </div>
       ) : (
-        <div className="space-y-3">
-          {sessions.map((session) => (
+        <>
+          {/* Hero card */}
+          <div style={{ padding: "0 20px 8px" }}>
             <SessionCard
-              key={session.id}
-              session={session}
-              inCount={inCountBySession[session.id] ?? 0}
-              userStatus={myStatusBySession[session.id] ?? null}
+              session={list[0]}
+              inCount={inCountBySession[list[0].id] ?? 0}
+              userStatus={myStatusBySession[list[0].id] ?? null}
+              isHero
             />
-          ))}
-        </div>
+          </div>
+
+          {/* Upcoming label */}
+          {list.length > 1 && (
+            <div style={{ padding: "12px 20px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
+                letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--faint)" }}>Upcoming</div>
+              <span style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 12.5, color: "var(--muted)", whiteSpace: "nowrap" }}>
+                {list.length} sessions
+              </span>
+            </div>
+          )}
+
+          {/* Rest of sessions */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 11, padding: "0 20px 20px" }}>
+            {list.slice(1).map((session) => (
+              <SessionCard
+                key={session.id}
+                session={session}
+                inCount={inCountBySession[session.id] ?? 0}
+                userStatus={myStatusBySession[session.id] ?? null}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

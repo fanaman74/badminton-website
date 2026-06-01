@@ -2,8 +2,6 @@
 
 import { useActionState } from "react";
 import { loginAction } from "@/lib/actions/auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AuthPage() {
   const [state, formAction, isPending] = useActionState(
@@ -12,65 +10,86 @@ export default function AuthPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center pb-2">
-          <div className="text-4xl mb-2">🏸</div>
-          <CardTitle className="text-2xl">Badminton Team</CardTitle>
-          <p className="text-slate-500 text-sm">Sign in with your email</p>
-        </CardHeader>
-        <CardContent>
-          <form action={formAction} className="space-y-4">
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "var(--bg)", padding: "0 24px",
+    }}>
+      <div style={{ width: "100%", maxWidth: 360 }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🏸</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 28,
+            color: "var(--ink)", letterSpacing: "-0.02em" }}>Eastside Smashers</div>
+          <div style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 14,
+            color: "var(--muted)", marginTop: 6 }}>Sign in with your team email</div>
+        </div>
+
+        {/* Card */}
+        <div style={{
+          background: "var(--surface)", borderRadius: "var(--r-lg)", padding: 24,
+          border: "1px solid var(--line)",
+          boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 12px 32px -16px rgba(20,18,12,.20)",
+        }}>
+          <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
+              <label htmlFor="email" style={{ display: "block", fontFamily: "var(--font-body)",
+                fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 6 }}>
                 Email
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoFocus
-                className="w-full rounded-md border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                id="email" name="email" type="email" required autoFocus
                 placeholder="you@example.com"
                 disabled={isPending}
+                style={{
+                  width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
+                  padding: "12px 14px", fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 15,
+                  color: "var(--ink)", background: "var(--surface-2)", outline: "none",
+                  transition: "border-color .15s",
+                }}
               />
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
+              <label htmlFor="password" style={{ display: "block", fontFamily: "var(--font-body)",
+                fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 6 }}>
                 Password
               </label>
               <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="w-full rounded-md border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                id="password" name="password" type="password" required
                 placeholder="Team password"
                 disabled={isPending}
+                style={{
+                  width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
+                  padding: "12px 14px", fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 15,
+                  color: "var(--ink)", background: "var(--surface-2)", outline: "none",
+                }}
               />
             </div>
+
             {state?.error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+              <div style={{ background: "color-mix(in srgb, var(--out) 10%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--out) 30%, transparent)",
+                borderRadius: "var(--r-sm)", padding: "10px 14px",
+                fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13, color: "var(--out)" }}>
                 {state.error}
-              </p>
+              </div>
             )}
-            <Button
+
+            <button
               type="submit"
               disabled={isPending}
-              className="w-full h-11 bg-green-600 hover:bg-green-700 text-white"
-            >
+              style={{
+                width: "100%", height: 50, borderRadius: "var(--r-md)", border: "none",
+                background: "var(--brand)", color: "var(--brand-ink)",
+                fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17,
+                cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.7 : 1,
+                boxShadow: "0 6px 18px -6px color-mix(in srgb, var(--brand) 60%, transparent)",
+                transition: "all .15s ease",
+              }}>
               {isPending ? "Signing in…" : "Sign in"}
-            </Button>
+            </button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,57 +2,61 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Wallet, Trophy } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/sessions", label: "Sessions", icon: CalendarDays, enabled: true },
-  { href: "/finances", label: "Finances", icon: Wallet, enabled: false },
-  { href: "/leaderboard", label: "Leaderboard", icon: Trophy, enabled: false },
+const tabs = [
+  { href: "/sessions", label: "Sessions", icon: CalendarIcon },
+  { href: "/team",     label: "Team",     icon: UsersIcon },
+  { href: "/finances", label: "Wallet",   icon: WalletIcon,   disabled: true },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 lg:hidden">
-      <div className="flex">
-        {navItems.map(({ href, label, icon: Icon, enabled }) => {
-          const isActive = pathname.startsWith(href);
-
-          if (!enabled) {
-            return (
-              <Tooltip key={href}>
-                <TooltipTrigger asChild>
-                  <button
-                    className="flex-1 flex flex-col items-center gap-1 py-3 text-slate-300 cursor-not-allowed"
-                    aria-disabled="true"
-                  >
-                    <Icon size={22} />
-                    <span className="text-xs font-medium">{label}</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Coming soon</TooltipContent>
-              </Tooltip>
-            );
-          }
-
+    <div style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30,
+      display: "grid", gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
+      paddingBottom: 20, paddingTop: 8,
+      background: "var(--surface)", borderTop: "1px solid var(--line)",
+    }}>
+      {tabs.map((t) => {
+        const on = pathname.startsWith(t.href);
+        const Ic = t.icon;
+        if (t.disabled) {
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex-1 flex flex-col items-center gap-1 py-3 min-h-[60px] transition-colors",
-                isActive ? "text-green-600" : "text-slate-500 hover:text-slate-900"
-              )}
-            >
-              <Icon size={22} />
-              <span className="text-xs font-medium">{label}</span>
-            </Link>
+            <div key={t.href} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              color: "color-mix(in srgb, var(--faint) 60%, transparent)",
+              padding: "4px 0", fontFamily: "var(--font-body)", fontWeight: 700,
+              fontSize: 10.5, letterSpacing: "0.02em", cursor: "not-allowed",
+            }}>
+              <Ic size={23} />
+              {t.label}
+            </div>
           );
-        })}
-      </div>
-    </nav>
+        }
+        return (
+          <Link key={t.href} href={t.href} style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+            color: on ? "var(--brand)" : "var(--faint)",
+            padding: "4px 0", textDecoration: "none",
+            fontFamily: "var(--font-body)", fontWeight: 700,
+            fontSize: 10.5, letterSpacing: "0.02em",
+          }}>
+            <Ic size={23} active={on} />
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
   );
+}
+
+function CalendarIcon({ size = 24, active }: { size?: number; active?: boolean }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9h17M8 2.5v4M16 2.5v4"/></svg>;
+}
+function UsersIcon({ size = 24, active }: { size?: number; active?: boolean }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 5.2a3.4 3.4 0 0 1 0 6.4M17 14.4a5.5 5.5 0 0 1 3.5 5.1"/></svg>;
+}
+function WalletIcon({ size = 24 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16.5 14.5h.01"/></svg>;
 }

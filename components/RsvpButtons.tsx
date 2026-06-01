@@ -1,91 +1,93 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle, XCircle, HelpCircle, Clock } from "lucide-react";
 import { updateRsvp } from "@/lib/actions/rsvp";
-import { cn } from "@/lib/utils";
 import type { RsvpStatus } from "@/types/database";
 
-interface RsvpButtonsProps {
+interface Props {
   sessionId: string;
   currentStatus: RsvpStatus | null;
   isFull: boolean;
 }
 
-export function RsvpButtons({ sessionId, currentStatus, isFull }: RsvpButtonsProps) {
-  const [optimisticStatus, setOptimisticStatus] = useState<RsvpStatus | null>(currentStatus);
+export function RsvpButtons({ sessionId, currentStatus, isFull }: Props) {
+  const [status, setStatus] = useState<RsvpStatus | null>(currentStatus);
   const [isPending, startTransition] = useTransition();
 
-  async function handleRsvp(newStatus: "IN" | "OUT" | "MAYBE") {
-    const prevStatus = optimisticStatus;
+  const activeKey = status === "WAITLIST" ? "IN" : status;
 
-    // Optimistic: if clicking IN on a full session, show WAITLIST immediately
-    const expectedStatus: RsvpStatus =
-      newStatus === "IN" && isFull && optimisticStatus !== "IN" ? "WAITLIST" : newStatus;
-    setOptimisticStatus(expectedStatus);
+  const opts = [
+    { key: "IN" as const,    label: isFull && status !== "IN" && status !== "WAITLIST" ? "Waitlist" : "In",    color: "var(--in)" },
+    { key: "MAYBE" as const, label: "Maybe", color: "var(--maybe)" },
+    { key: "OUT" as const,   label: "Out",   color: "var(--out)" },
+  ];
 
+  function handleRsvp(key: "IN" | "MAYBE" | "OUT") {
     startTransition(async () => {
-      const result = await updateRsvp(sessionId, newStatus);
-      if (result.error) {
-        setOptimisticStatus(prevStatus);
-      } else if (result.status) {
-        setOptimisticStatus(result.status as RsvpStatus);
-      }
+      const result = await updateRsvp(sessionId, key);
+      if (result.status) setStatus(result.status);
     });
   }
 
-  const buttons: { value: "IN" | "OUT" | "MAYBE"; label: string; icon: React.ReactNode; active: string; inactive: string }[] = [
-    {
-      value: "IN",
-      label: "Going",
-      icon: <CheckCircle size={20} />,
-      active: "bg-green-600 text-white border-green-600",
-      inactive: "bg-white text-slate-600 border-slate-200 hover:border-green-400 hover:text-green-600",
-    },
-    {
-      value: "MAYBE",
-      label: "Maybe",
-      icon: <HelpCircle size={20} />,
-      active: "bg-yellow-500 text-white border-yellow-500",
-      inactive: "bg-white text-slate-600 border-slate-200 hover:border-yellow-400 hover:text-yellow-600",
-    },
-    {
-      value: "OUT",
-      label: "Can't go",
-      icon: <XCircle size={20} />,
-      active: "bg-red-500 text-white border-red-500",
-      inactive: "bg-white text-slate-600 border-slate-200 hover:border-red-400 hover:text-red-500",
-    },
-  ];
+  const icons = {
+    IN:    <CheckIcon />,
+    MAYBE: <MaybeIcon />,
+    OUT:   <XIcon />,
+  };
 
   return (
-    <div>
-      <div className="flex gap-2">
-        {buttons.map(({ value, label, icon, active, inactive }) => {
-          const isActive = optimisticStatus === value || (value === "IN" && optimisticStatus === "WAITLIST");
+    <div style={{
+      position: "fixed", bottom: 65, left: 0, right: 0, zIndex: 20,
+      padding: "12px 16px 16px", background: "var(--surface)",
+      borderTop: "1px solid var(--line)",
+      boxShadow: "0 -8px 24px -18px rgba(20,18,12,.5)",
+    }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 9 }}>
+        {opts.map((o) => {
+          const on = activeKey === o.key;
           return (
             <button
-              key={value}
-              onClick={() => handleRsvp(value)}
+              key={o.key}
+              onClick={() => handleRsvp(o.key)}
               disabled={isPending}
-              className={cn(
-                "flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 text-sm font-medium transition-all min-h-[72px]",
-                isActive ? active : inactive,
-                isPending && "opacity-60 cursor-not-allowed"
-              )}
+              style={{
+                border: on ? "none" : "1.5px solid var(--line)",
+                cursor: "pointer",
+                background: on ? o.color : "var(--surface)",
+                color: on ? "#fff" : "var(--ink)",
+                borderRadius: "var(--r-md)",
+                padding: "14px 8px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 5,
+                fontFamily: "var(--font-display)",
+                fontWeight: 800,
+                fontSize: 15.5,
+                boxShadow: on ? `0 8px 20px -8px ${o.color}` : "none",
+                transform: on ? "translateY(-1px)" : "none",
+                transition: "all .18s ease",
+                opacity: isPending ? 0.7 : 1,
+              }}
             >
-              {icon}
-              <span>{label}</span>
+              <span style={{ display: "flex", color: on ? "#fff" : o.color }}>
+                {icons[o.key]}
+              </span>
+              {o.label}
             </button>
           );
         })}
       </div>
-      {optimisticStatus === "WAITLIST" && (
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
-          <Clock size={15} className="shrink-0" />
-          <span>Session is full — you&apos;re on the waitlist. You&apos;ll be added automatically if a spot opens.</span>
-        </div>
-      )}
     </div>
   );
+}
+
+function CheckIcon() {
+  return <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg>;
+}
+function MaybeIcon() {
+  return <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.4a2.8 2.8 0 0 1 5.4.9c0 1.9-2.7 2.4-2.7 3.9M12 17.4h.01"/></svg>;
+}
+function XIcon() {
+  return <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>;
 }

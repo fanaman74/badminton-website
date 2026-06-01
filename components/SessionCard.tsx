@@ -1,71 +1,170 @@
-import Link from "next/link";
-import { MapPin, Users, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import type { Session, RsvpStatus } from "@/types/database";
+"use client";
 
-interface SessionCardProps {
+import Link from "next/link";
+import type { Session, RsvpStatus } from "@/types/database";
+import { CourtMeter } from "@/components/ui/CourtMeter";
+
+interface Props {
   session: Session;
   inCount: number;
   userStatus: RsvpStatus | null;
+  isHero?: boolean;
 }
 
-const statusConfig: Record<RsvpStatus, { label: string; className: string }> = {
-  IN: { label: "Going", className: "bg-green-100 text-green-700 border-green-200" },
-  MAYBE: { label: "Maybe", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  OUT: { label: "Not going", className: "bg-red-100 text-red-700 border-red-200" },
-  WAITLIST: { label: "Waitlisted", className: "bg-slate-100 text-slate-600 border-slate-200" },
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  IN:       { label: "You're in",  color: "var(--in)" },
+  WAITLIST: { label: "Waitlisted", color: "var(--maybe)" },
+  MAYBE:    { label: "Maybe",      color: "var(--maybe)" },
+  OUT:      { label: "Not going",  color: "var(--out)" },
 };
 
-export function SessionCard({ session, inCount, userStatus }: SessionCardProps) {
-  const date = new Date(session.date);
-  const dayOfWeek = date.toLocaleDateString("en-SG", { weekday: "short" });
-  const dayNum = date.toLocaleDateString("en-SG", { day: "numeric" });
-  const month = date.toLocaleDateString("en-SG", { month: "short" });
-  const time = date.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit", hour12: true });
-
-  const isFull = inCount >= session.max_capacity;
-  const statusBadge = userStatus ? statusConfig[userStatus] : null;
-
+function DateBlock({ date, big }: { date: Date; big?: boolean }) {
+  const dow = date.toLocaleDateString("en-GB", { weekday: "short" }).toUpperCase();
+  const day = date.getDate().toString().padStart(2, "0");
+  const mon = date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase();
   return (
-    <Link href={`/sessions/${session.id}`}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center bg-green-50 rounded-lg px-3 py-2 min-w-[56px]">
-              <span className="text-xs font-medium text-green-600 uppercase">{dayOfWeek}</span>
-              <span className="text-2xl font-bold text-slate-900 leading-tight">{dayNum}</span>
-              <span className="text-xs text-slate-500 uppercase">{month}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">{time}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <MapPin size={13} className="text-slate-400 shrink-0" />
-                    <p className="text-sm text-slate-700 truncate">{session.location_name}</p>
-                  </div>
+    <div style={{
+      width: big ? 64 : 54, flexShrink: 0, textAlign: "center",
+      background: "var(--accent)", color: "var(--accent-ink)",
+      borderRadius: "var(--r-md)", padding: big ? "9px 0 7px" : "7px 0 6px",
+    }}>
+      <div style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 10.5, letterSpacing: "0.1em" }}>{dow}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: big ? 30 : 25, lineHeight: 1, margin: "1px 0" }}>{day}</div>
+      <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 10, letterSpacing: "0.1em", opacity: 0.8 }}>{mon}</div>
+    </div>
+  );
+}
+
+function FillBar({ value, max }: { value: number; max: number }) {
+  const pct = Math.min(100, (value / max) * 100);
+  const full = value >= max;
+  return (
+    <div style={{ height: 6, borderRadius: 99, background: "var(--surface-2)", overflow: "hidden", border: "1px solid var(--line)" }}>
+      <div style={{ width: pct + "%", height: "100%", borderRadius: 99,
+        background: full ? "var(--maybe)" : "var(--brand)", transition: "width .4s cubic-bezier(.3,1,.4,1)" }} />
+    </div>
+  );
+}
+
+function ClockIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+    </svg>
+  );
+}
+
+export function SessionCard({ session, inCount, userStatus, isHero }: Props) {
+  const date = new Date(session.date);
+  const cap = session.max_capacity;
+  const full = inCount >= cap;
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const statusMeta = userStatus ? STATUS_META[userStatus] : null;
+
+  if (isHero) {
+    const when = (() => {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const d = new Date(date); d.setHours(0,0,0,0);
+      const diff = (d.getTime() - today.getTime()) / 86400000;
+      if (diff === 0) return "Today";
+      if (diff === 1) return "Tomorrow";
+      return date.toLocaleDateString("en-GB", { weekday: "long" });
+    })();
+
+    return (
+      <Link href={`/sessions/${session.id}`} style={{ textDecoration: "none", display: "block" }}>
+        <div style={{
+          background: "var(--surface)", borderRadius: "var(--r-lg)",
+          border: "1px solid var(--line)", overflow: "hidden",
+          boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
+        }}>
+          <div style={{ background: "var(--ink)", padding: "16px 18px 15px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
+                  letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 7 }}>
+                  Next up · {when}
                 </div>
-                <ChevronRight size={18} className="text-slate-400 mt-0.5 shrink-0" />
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 23,
+                  color: "var(--bg)", letterSpacing: "-0.01em" }}>{session.location_name}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5,
+                  color: "rgba(241,239,230,0.65)", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13 }}>
+                  <ClockIcon size={14} />{time}
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                <div className="flex items-center gap-1">
-                  <Users size={14} className="text-slate-400" />
-                  <span className={`text-xs font-medium ${isFull ? "text-orange-600" : "text-slate-600"}`}>
-                    {inCount}/{session.max_capacity}
-                    {isFull && " · Full"}
-                  </span>
-                </div>
-                {statusBadge && (
-                  <Badge variant="outline" className={`text-xs ${statusBadge.className}`}>
-                    {statusBadge.label}
-                  </Badge>
-                )}
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 34, color: "var(--accent)", lineHeight: 1 }}>{inCount}</div>
+                <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 10.5,
+                  letterSpacing: "0.08em", color: "rgba(241,239,230,0.55)", textTransform: "uppercase" }}>of {cap} in</div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div style={{ padding: "13px 18px 15px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <CourtMeter session={session} confirmedCount={inCount} compact />
+            {statusMeta ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 11px",
+                borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
+                color: statusMeta.color, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5 }}>
+                {statusMeta.label}
+              </span>
+            ) : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6,
+                color: "var(--brand)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13.5 }}>
+                {full ? "Join waitlist" : "Tap to RSVP"} →
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href={`/sessions/${session.id}`} style={{ textDecoration: "none", display: "block" }}>
+      <div style={{
+        background: "var(--surface)", borderRadius: "var(--r-lg)", padding: 13,
+        border: "1px solid var(--line)",
+        boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
+      }}>
+        <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
+          <DateBlock date={date} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16.5,
+                color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {session.location_name}
+              </div>
+              {full && (
+                <span style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 9.5,
+                  letterSpacing: "0.08em", color: "var(--maybe)",
+                  background: "color-mix(in srgb,var(--maybe) 15%,transparent)",
+                  padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>FULL</span>
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3,
+              color: "var(--muted)", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 12.5 }}>
+              <ClockIcon size={13} />{time}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, gap: 10 }}>
+              <div style={{ flex: 1 }}><FillBar value={inCount} max={cap} /></div>
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 12,
+                color: full ? "var(--maybe)" : "var(--muted)", flexShrink: 0 }}>
+                {inCount}/{cap}
+              </span>
+            </div>
+          </div>
+        </div>
+        {statusMeta && (
+          <div style={{ marginTop: 11, paddingTop: 11, borderTop: "1px solid var(--line)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 8px",
+              borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
+              color: statusMeta.color, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11 }}>
+              {statusMeta.label}
+            </span>
+          </div>
+        )}
+      </div>
     </Link>
   );
 }

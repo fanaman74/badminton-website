@@ -1,35 +1,65 @@
 @import "tailwindcss";
 
+/* ── Design tokens (Energy theme) ──────────────────────────── */
 :root {
+  --bg: #F1EFE6;
+  --surface: #FFFFFF;
+  --surface-2: #FBF9F3;
+  --ink: #17150F;
+  --muted: #7C7560;
+  --faint: #A8A18C;
+  --line: #E9E5D8;
+  --brand: #FF5A1F;
+  --brand-ink: #FFFFFF;
+  --accent: #C6F03C;
+  --accent-ink: #1C2400;
+  --in: #1FA463;
+  --maybe: #E08A1E;
+  --out: #D8463B;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 26px;
+  --font-display: 'Archivo', sans-serif;
+  --font-body: 'Schibsted Grotesk', sans-serif;
+
+  /* shadcn compat */
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
   --primary: 142.1 76.2% 36.3%;
   --primary-foreground: 355.7 100% 97.3%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
+  --muted-shadcn: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 142.1 76.2% 36.3%;
-  --radius: 0.5rem;
+  --ring: 22 100% 55%;
+  --radius: 0.75rem;
 }
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --font-sans: var(--font-geist-sans);
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-body);
 }
 
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #__next { height: 100%; }
+
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* hide scrollbars */
+::-webkit-scrollbar { width: 0; height: 0; }
+
+button { font-family: inherit; cursor: pointer; }
+
+input::placeholder { color: var(--faint); }
