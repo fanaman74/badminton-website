@@ -1,13 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
-import { validateInviteCodeAction } from "@/lib/actions/auth";
+import { loginAction } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AuthPage() {
   const [state, formAction, isPending] = useActionState(
-    validateInviteCodeAction,
+    loginAction,
     { error: undefined } as { error?: string }
   );
 
@@ -17,25 +17,42 @@ export default function AuthPage() {
         <CardHeader className="text-center pb-2">
           <div className="text-4xl mb-2">🏸</div>
           <CardTitle className="text-2xl">Badminton Team</CardTitle>
-          <p className="text-slate-500 text-sm">Enter your invite code to join</p>
+          <p className="text-slate-500 text-sm">Sign in with your email</p>
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-4">
             <div>
               <label
-                htmlFor="inviteCode"
+                htmlFor="email"
                 className="block text-sm font-medium text-slate-700 mb-1"
               >
-                Invite Code
+                Email
               </label>
               <input
-                id="inviteCode"
-                name="inviteCode"
-                type="password"
+                id="email"
+                name="email"
+                type="email"
                 required
                 autoFocus
                 className="w-full rounded-md border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-                placeholder="Enter the code"
+                placeholder="you@example.com"
+                disabled={isPending}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="w-full rounded-md border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                placeholder="Team password"
                 disabled={isPending}
               />
             </div>
@@ -49,7 +66,7 @@ export default function AuthPage() {
               disabled={isPending}
               className="w-full h-11 bg-green-600 hover:bg-green-700 text-white"
             >
-              {isPending ? "Joining…" : "Join"}
+              {isPending ? "Signing in…" : "Sign in"}
             </Button>
           </form>
         </CardContent>

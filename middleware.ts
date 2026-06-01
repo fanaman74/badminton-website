@@ -4,7 +4,7 @@ const SESSION_COOKIE_NAME = "badminton_session";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isAuthRoute = pathname.startsWith("/auth");
+  const isAuthRoute = pathname.startsWith("/auth") || pathname.startsWith("/setup");
 
   // Check for session cookie
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;

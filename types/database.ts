@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
+          email: string | null;
           role: "ADMIN" | "PLAYER";
           balance: number;
           created_at: string;
@@ -20,6 +21,7 @@ export interface Database {
         Insert: {
           id: string;
           name: string;
+          email?: string | null;
           role?: "ADMIN" | "PLAYER";
           balance?: number;
           created_at?: string;
@@ -27,6 +29,7 @@ export interface Database {
         Update: {
           id?: string;
           name?: string;
+          email?: string | null;
           role?: "ADMIN" | "PLAYER";
           balance?: number;
           created_at?: string;

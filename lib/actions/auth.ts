@@ -6,61 +6,47 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 
 const SESSION_COOKIE_NAME = "badminton_session";
-const SESSION_TOKEN_LENGTH = 64;
 
 function generateSessionToken(): string {
   return uuidv4().replace(/-/g, "") + uuidv4().replace(/-/g, "");
 }
 
-export async function validateInviteCodeAction(
+export async function loginAction(
   _prevState: { error?: string } | undefined,
   formData: FormData
 ): Promise<{ error?: string } | undefined> {
-  const inviteCode = formData.get("inviteCode") as string;
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const password = formData.get("password") as string;
 
-  if (!inviteCode) {
-    return { error: "Please enter the invite code." };
+  if (!email || !password) {
+    return { error: "Please enter your email and password." };
   }
 
-  if (inviteCode !== process.env.INVITE_CODE) {
-    return { error: "Invalid invite code. Ask your team admin for the code." };
+  // Password is the shared team password
+  if (password !== process.env.INVITE_CODE) {
+    return { error: "Incorrect password." };
   }
 
   const supabase = await createClient();
 
-  // Generate a new user ID and session token
-  const userId = uuidv4();
-  const sessionToken = generateSessionToken();
-
-  // Create or get profile for this user
-  const { data: existingProfile } = await supabase
+  // Look up profile by email
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id")
-    .eq("id", userId)
+    .eq("email", email)
     .single();
 
-  if (!existingProfile) {
-    // Create new profile with auto-generated name (format: Player + random suffix)
-    const playerName = `Player ${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: userId,
-        name: playerName,
-        role: "PLAYER",
-      });
-
-    if (profileError) {
-      return { error: "Failed to create user profile. Please try again." };
-    }
+  if (profileError || !profile) {
+    return { error: "Email not registered. Contact your team admin." };
   }
 
-  // Create session record
+  // Create session token
+  const sessionToken = generateSessionToken();
+
   const { error: sessionError } = await supabase
     .from("user_sessions")
     .insert({
-      user_id: userId,
+      user_id: profile.id,
       token: sessionToken,
     });
 
