@@ -19,9 +19,9 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 };
 
 function DateBlock({ date, big }: { date: Date; big?: boolean }) {
-  const dow = date.toLocaleDateString("en-GB", { weekday: "short" }).toUpperCase();
-  const day = date.getDate().toString().padStart(2, "0");
-  const mon = date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase();
+  const dow = date.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" }).toUpperCase();
+  const day = date.toLocaleDateString("en-GB", { day: "2-digit", timeZone: "UTC" });
+  const mon = date.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }).toUpperCase();
   return (
     <div style={{
       width: big ? 64 : 54, flexShrink: 0, textAlign: "center",
@@ -59,17 +59,18 @@ export function SessionCard({ session, inCount, userStatus, isHero }: Props) {
   const date = new Date(session.date);
   const cap = session.max_capacity;
   const full = inCount >= cap;
-  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "UTC" });
   const statusMeta = userStatus ? STATUS_META[userStatus] : null;
 
   if (isHero) {
     const when = (() => {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const d = new Date(date); d.setHours(0,0,0,0);
-      const diff = (d.getTime() - today.getTime()) / 86400000;
+      // Compare dates in UTC so the day label matches what was stored
+      const todayUTC = new Date(); todayUTC.setUTCHours(0,0,0,0);
+      const dUTC = new Date(date); dUTC.setUTCHours(0,0,0,0);
+      const diff = (dUTC.getTime() - todayUTC.getTime()) / 86400000;
       if (diff === 0) return "Today";
       if (diff === 1) return "Tomorrow";
-      return date.toLocaleDateString("en-GB", { weekday: "long" });
+      return date.toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" });
     })();
 
     return (

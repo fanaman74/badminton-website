@@ -51,11 +51,12 @@ export default async function SessionDetailPage({ params }: Props) {
   const spots = s.max_capacity - inCount;
 
   const date = new Date(s.date);
-  const dow = date.toLocaleDateString("en-GB", { weekday: "short" }).toUpperCase();
-  const day = date.getDate().toString().padStart(2, "0");
-  const mon = date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase();
-  const fullDate = date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const tz = "UTC"; // Sessions are stored in UTC matching what the admin typed
+  const dow = date.toLocaleDateString("en-GB", { weekday: "short", timeZone: tz }).toUpperCase();
+  const day = date.toLocaleDateString("en-GB", { day: "2-digit", timeZone: tz });
+  const mon = date.toLocaleDateString("en-GB", { month: "short", timeZone: tz }).toUpperCase();
+  const fullDate = date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz });
 
   const isAdmin = profile?.role === "ADMIN";
 

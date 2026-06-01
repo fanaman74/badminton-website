@@ -29,11 +29,8 @@ export async function createSessionAction(
     return { error: "Please fill in all required fields." };
   }
 
-  // Parse the date/time as local timezone, not UTC
-  const localDate = new Date(`${dateStr}T${timeStr}`);
-  // Adjust for timezone offset to store as UTC
-  const tzOffset = localDate.getTimezoneOffset() * 60000;
-  const date = new Date(localDate.getTime() - tzOffset).toISOString();
+  // Store exactly what the admin typed — server runs UTC so no conversion needed
+  const date = new Date(`${dateStr}T${timeStr}Z`).toISOString();
   const maxCapacity = courtsBooked * 4;
 
   const { data, error } = await supabase
