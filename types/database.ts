@@ -171,6 +171,38 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          token: string;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          token: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          token?: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -192,6 +224,7 @@ export type Session = Database["public"]["Tables"]["sessions"]["Row"];
 export type Rsvp = Database["public"]["Tables"]["rsvps"]["Row"];
 export type Expense = Database["public"]["Tables"]["expenses"]["Row"];
 export type Match = Database["public"]["Tables"]["matches"]["Row"];
+export type UserSession = Database["public"]["Tables"]["user_sessions"]["Row"];
 
 export type RsvpStatus = "IN" | "OUT" | "MAYBE" | "WAITLIST";
 export type SessionStatus = "UPCOMING" | "COMPLETED" | "CANCELLED";
