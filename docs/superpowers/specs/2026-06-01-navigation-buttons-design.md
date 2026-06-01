@@ -77,8 +77,8 @@ Replaces the current 4-card stats bar (Active Members, Courts Booked, Training S
 
 **Content:**
 - **Primary stat:** Member count (e.g., "18+ Active Members")
-- **Subtext:** "Join VUB Smashers" or "Be part of the community"
-- **Optional CTA button:** "Learn More" or "View Team" (links to `/team`)
+- **Subtext:** "Join VUB Smashers"
+- **CTA button:** "View Team" button (links to `/team`)
 
 **Styling:**
 - Full-width card with padding (24px vertical, 16-24px horizontal)
@@ -99,11 +99,8 @@ Replaces the current 4-card stats bar (Active Members, Courts Booked, Training S
 ### Other Pages Navigation
 
 **Content pages** (`/sessions`, `/history`, `/team`, `/you`):
-- Include a minimal navigation link/breadcrumb at **top or bottom** of page
-- Examples:
-  - "← Back to Home" link (simple, clean)
-  - Breadcrumb: "Home / Sessions" (more explicit)
-- Styling: Simple link, no fixed bars, no replicated grid buttons
+- Include a **"← Back to Home" link at the top** of the page (simple, clean)
+- Styling: Simple text link, no fixed bars, no replicated grid buttons
 - Purpose: Let users return to home, avoid being stranded on a content page
 
 ### Removed Components
