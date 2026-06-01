@@ -103,30 +103,27 @@ export async function updateRsvp(
   revalidatePath(`/sessions/${sessionId}`);
   revalidatePath("/sessions");
 
-  // Send confirmation email to the user who just RSVPed
-  // Only email for IN, WAITLIST, MAYBE — not for OUT (cancellation)
-  if (finalStatus !== "OUT") {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name, email")
-      .eq("id", userId)
-      .single();
+  // Send confirmation email to the user for any RSVP change
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, email")
+    .eq("id", userId)
+    .single();
 
-    if (profile?.email) {
-      await sendRsvpConfirmationEmail({
-        toEmail: profile.email,
-        toName: profile.name,
-        status: finalStatus as "IN" | "MAYBE" | "WAITLIST",
-        session: {
-          date,
-          locationName: location_name,
-          locationMapsUrl: location_maps_url,
-          courtsBooked: courts_booked,
-          maxCapacity: max_capacity,
-        },
-        sessionId,
-      });
-    }
+  if (profile?.email) {
+    await sendRsvpConfirmationEmail({
+      toEmail: profile.email,
+      toName: profile.name,
+      status: finalStatus as "IN" | "OUT" | "MAYBE" | "WAITLIST",
+      session: {
+        date,
+        locationName: location_name,
+        locationMapsUrl: location_maps_url,
+        courtsBooked: courts_booked,
+        maxCapacity: max_capacity,
+      },
+      sessionId,
+    });
   }
 
   return { status: finalStatus };
