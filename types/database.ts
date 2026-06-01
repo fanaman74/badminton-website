@@ -174,6 +174,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      team_config: {
+        Row: {
+          id: number;
+          day_of_week: number;
+          courts: number;
+          start_time: string;
+          location_name: string;
+          location_maps_url: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          day_of_week?: number;
+          courts?: number;
+          start_time?: string;
+          location_name?: string;
+          location_maps_url?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          day_of_week?: number;
+          courts?: number;
+          start_time?: string;
+          location_name?: string;
+          location_maps_url?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       user_sessions: {
         Row: {
           id: string;

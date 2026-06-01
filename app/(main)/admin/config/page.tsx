@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
-import { NewSessionForm } from "./NewSessionForm";
+import { ConfigForm } from "./ConfigForm";
 
-export default async function NewSessionPage() {
+export default async function AdminConfigPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") redirect("/sessions");
 
@@ -14,5 +14,5 @@ export default async function NewSessionPage() {
     .eq("id", 1)
     .single();
 
-  return <NewSessionForm config={config} />;
+  return <ConfigForm config={config} />;
 }
