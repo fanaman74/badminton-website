@@ -8,8 +8,6 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
           position: relative;
           overflow: hidden;
           height: 65vh;
-          display: flex;
-          align-items: center;
         }
         @media (min-width: 768px) {
           .hero-panel-responsive {
@@ -17,15 +15,18 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
           }
         }
         .hero-text-block {
-          position: relative;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
           z-index: 2;
           padding: 32px 24px;
           width: 100%;
+          box-sizing: border-box;
         }
         @media (min-width: 768px) {
           .hero-text-block {
-            padding: 48px 80px;
-            max-width: 60%;
+            padding: 48px 140px;
+            max-width: 50%;
           }
         }
         @media (min-width: 1200px) {
