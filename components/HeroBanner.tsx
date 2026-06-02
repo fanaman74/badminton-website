@@ -222,7 +222,7 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
               color: "rgba(255,255,255,0.70)",
               letterSpacing: "0.02em",
             }}>
-              Members · Join VUB Smashers
+              Members
             </span>
           </div>
         </div>
