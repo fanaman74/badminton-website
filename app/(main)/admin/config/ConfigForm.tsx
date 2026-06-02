@@ -29,10 +29,31 @@ export function ConfigForm({ config }: { config: Config | null }) {
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState<{ error?: string; ok?: string } | null>(null);
 
+  const defaults = config ?? { day_of_week: 3, courts: 3, start_time: "20:00", location_name: "", location_maps_url: null };
+
+  // Compute next date as YYYY-MM-DD (used as default for date picker)
+  const nextDateISO = (() => {
+    const jsDay = (defaults.day_of_week + 1) % 7;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayJs = today.getDay();
+    let daysAhead = (jsDay - todayJs + 7) % 7;
+    if (daysAhead === 0) daysAhead = 7;
+    const d = new Date(today); d.setDate(today.getDate() + daysAhead);
+    return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  })();
+
+  // Tomorrow as YYYY-MM-DD (min for date picker)
+  const tomorrowISO = (() => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const [selectedDate, setSelectedDate] = useState(nextDateISO);
+
   async function handleCreateNext() {
     setCreating(true);
     setCreateMsg(null);
-    const result = await createNextSessionAction();
+    const result = await createNextSessionAction(selectedDate);
     if (result.error) {
       setCreateMsg({ error: result.error });
     } else {
@@ -42,17 +63,10 @@ export function ConfigForm({ config }: { config: Config | null }) {
     setCreating(false);
   }
 
-  const defaults = config ?? { day_of_week: 3, courts: 3, start_time: "20:00", location_name: "", location_maps_url: null };
-
-  // Compute next date label
-  const nextDate = (() => {
-    const jsDay = (defaults.day_of_week + 1) % 7;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const todayJs = today.getDay();
-    let daysAhead = (jsDay - todayJs + 7) % 7;
-    if (daysAhead === 0) daysAhead = 7;
-    const d = new Date(today); d.setDate(today.getDate() + daysAhead);
-    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  // Human-readable label for selected date
+  const selectedDateLabel = (() => {
+    const [y, mo, d] = selectedDate.split("-").map(Number);
+    return new Date(y, mo - 1, d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
   })();
 
   const input = {
@@ -92,33 +106,49 @@ export function ConfigForm({ config }: { config: Config | null }) {
         {/* Create next session card */}
         <div style={{
           background: "var(--ink)", borderRadius: "var(--r-lg)", padding: "18px 20px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          display: "flex", flexDirection: "column", gap: 14,
         }}>
-          <div>
-            <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11,
-              letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>
-              Next session
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11,
+                letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>
+                Next session
+              </div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17,
+                color: "var(--bg)", lineHeight: 1.2 }}>{selectedDateLabel}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13,
+                color: "rgba(241,239,230,0.6)", marginTop: 3 }}>
+                {defaults.courts} court{defaults.courts > 1 ? "s" : ""} · {defaults.start_time} · {defaults.location_name || "No location set"}
+              </div>
             </div>
-            <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17,
-              color: "var(--bg)", lineHeight: 1.2 }}>{nextDate}</div>
-            <div style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13,
-              color: "rgba(241,239,230,0.6)", marginTop: 3 }}>
-              {defaults.courts} court{defaults.courts > 1 ? "s" : ""} · {defaults.start_time} · {defaults.location_name || "No location set"}
-            </div>
+            <button
+              onClick={handleCreateNext}
+              disabled={creating || !defaults.location_name}
+              style={{
+                flexShrink: 0, height: 42, padding: "0 16px", borderRadius: "var(--r-md)", border: "none",
+                background: "var(--accent)", color: "var(--accent-ink)",
+                fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 14,
+                cursor: creating || !defaults.location_name ? "not-allowed" : "pointer",
+                opacity: creating || !defaults.location_name ? 0.5 : 1,
+                whiteSpace: "nowrap",
+              }}>
+              {creating ? "…" : "Create →"}
+            </button>
           </div>
-          <button
-            onClick={handleCreateNext}
-            disabled={creating || !defaults.location_name}
+          {/* Date picker */}
+          <input
+            type="date"
+            min={tomorrowISO}
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
             style={{
-              flexShrink: 0, height: 42, padding: "0 16px", borderRadius: "var(--r-md)", border: "none",
-              background: "var(--accent)", color: "var(--accent-ink)",
-              fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 14,
-              cursor: creating || !defaults.location_name ? "not-allowed" : "pointer",
-              opacity: creating || !defaults.location_name ? 0.5 : 1,
-              whiteSpace: "nowrap",
-            }}>
-            {creating ? "…" : "Create →"}
-          </button>
+              width: "100%", borderRadius: "var(--r-sm)",
+              border: "1.5px solid rgba(241,239,230,0.20)",
+              padding: "10px 13px", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 14,
+              color: "var(--bg)", background: "rgba(241,239,230,0.08)", outline: "none",
+              boxSizing: "border-box", colorScheme: "dark",
+            }}
+          />
         </div>
 
         {createMsg?.error && (

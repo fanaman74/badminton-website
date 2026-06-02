@@ -40,7 +40,7 @@ export async function saveTeamConfigAction(
   return { success: true };
 }
 
-export async function createNextSessionAction(): Promise<{ error?: string; id?: string }> {
+export async function createNextSessionAction(dateStr?: string): Promise<{ error?: string; id?: string }> {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") return { error: "Not authorized." };
 
@@ -55,21 +55,26 @@ export async function createNextSessionAction(): Promise<{ error?: string; id?: 
   if (!config) return { error: "No config found. Save your court configuration first." };
   if (!config.location_name) return { error: "Set a default location before creating sessions." };
 
-  // Find next occurrence of the configured weekday
-  // day_of_week: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
-  // JS getDay():  0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const jsDay = (config.day_of_week + 1) % 7; // convert 0=Mon -> JS 1, 6=Sun -> JS 0
-  const now = new Date();
-  const today = new Date(now); today.setHours(0, 0, 0, 0);
-  const todayJs = today.getDay();
-  let daysAhead = (jsDay - todayJs + 7) % 7;
-  if (daysAhead === 0) daysAhead = 7; // always next week if today is the day
-
-  const sessionDate = new Date(today);
-  sessionDate.setDate(today.getDate() + daysAhead);
   const [h, m] = config.start_time.split(":").map(Number);
-  // Use UTC hours so what the admin configured is stored as-is
-  sessionDate.setUTCHours(h, m, 0, 0);
+  let sessionDate: Date;
+
+  if (dateStr) {
+    // Admin picked a specific date (YYYY-MM-DD)
+    const [year, month, day] = dateStr.split("-").map(Number);
+    sessionDate = new Date(Date.UTC(year, month - 1, day, h, m, 0, 0));
+  } else {
+    // Find next occurrence of the configured weekday
+    // day_of_week: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+    // JS getDay():  0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    const jsDay = (config.day_of_week + 1) % 7;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const todayJs = today.getDay();
+    let daysAhead = (jsDay - todayJs + 7) % 7;
+    if (daysAhead === 0) daysAhead = 7;
+    sessionDate = new Date(today);
+    sessionDate.setDate(today.getDate() + daysAhead);
+    sessionDate.setUTCHours(h, m, 0, 0);
+  }
 
   const { data, error } = await supabase
     .from("sessions")
