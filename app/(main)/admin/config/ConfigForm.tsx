@@ -5,15 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saveTeamConfigAction, createNextSessionAction } from "@/lib/actions/config";
 
-const DAYS = [
-  { value: 0, label: "Monday" },
-  { value: 1, label: "Tuesday" },
-  { value: 2, label: "Wednesday" },
-  { value: 3, label: "Thursday" },
-  { value: 4, label: "Friday" },
-  { value: 5, label: "Saturday" },
-  { value: 6, label: "Sunday" },
-];
 
 interface Config {
   day_of_week: number;
@@ -135,20 +126,6 @@ export function ConfigForm({ config }: { config: Config | null }) {
               {creating ? "…" : "Create →"}
             </button>
           </div>
-          {/* Date picker */}
-          <input
-            type="date"
-            min={tomorrowISO}
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{
-              width: "100%", borderRadius: "var(--r-sm)",
-              border: "1.5px solid rgba(241,239,230,0.20)",
-              padding: "10px 13px", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 14,
-              color: "var(--bg)", background: "rgba(241,239,230,0.08)", outline: "none",
-              boxSizing: "border-box", colorScheme: "dark",
-            }}
-          />
         </div>
 
         {createMsg?.error && (
@@ -180,15 +157,18 @@ export function ConfigForm({ config }: { config: Config | null }) {
           </div>
 
           <form action={saveAction} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {/* Day + Courts */}
+            {/* Date + Courts */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <label htmlFor="day_of_week" style={label}>Day of week</label>
-                <select id="day_of_week" name="day_of_week" defaultValue={defaults.day_of_week} style={{ ...input, appearance: "none" }}>
-                  {DAYS.map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
+                <label htmlFor="session_date" style={label}>Session date</label>
+                <input
+                  id="session_date"
+                  type="date"
+                  min={tomorrowISO}
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  style={{ ...input, colorScheme: "light" }}
+                />
               </div>
               <div>
                 <label htmlFor="courts" style={label}>Courts</label>
@@ -199,6 +179,8 @@ export function ConfigForm({ config }: { config: Config | null }) {
                 </select>
               </div>
             </div>
+            {/* Keep day_of_week in DB for backward compat, derived from picked date */}
+            <input type="hidden" name="day_of_week" value={(new Date(selectedDate).getDay() + 6) % 7} />
 
             {/* Time */}
             <div>
