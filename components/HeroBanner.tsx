@@ -116,10 +116,11 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
           }
         }
         .hero-members-card {
-          display: inline-flex;
+          display: flex;
           align-items: center;
           gap: 10px;
-          margin-top: 18px;
+          margin-top: 12px;
+          width: fit-content;
           padding: 10px 16px;
           border-radius: 10px;
           border: 1px solid rgba(198,240,60,0.20);
