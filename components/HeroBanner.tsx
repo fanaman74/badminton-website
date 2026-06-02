@@ -1,6 +1,6 @@
 "use client";
 
-export function HeroBanner({ name }: { name: string }) {
+export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCount?: number }) {
   return (
     <div style={{ position: "relative", marginBottom: 4 }}>
       <style>{`
@@ -115,6 +115,29 @@ export function HeroBanner({ name }: { name: string }) {
             padding: 8px 18px;
           }
         }
+        .hero-members-strip {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 24px;
+          background: rgba(6,12,28,0.80);
+          border-top: 1px solid rgba(198,240,60,0.12);
+        }
+        @media (min-width: 768px) {
+          .hero-members-strip {
+            padding: 14px 80px;
+          }
+        }
+        @media (min-width: 1200px) {
+          .hero-members-strip {
+            padding: 14px 140px;
+          }
+        }
       `}</style>
 
       {/* ── Main hero panel ── */}
@@ -185,6 +208,28 @@ export function HeroBanner({ name }: { name: string }) {
           <div className="hero-chip">
             👋 Hey, {name.split(" ")[0]}!
           </div>
+        </div>
+
+        {/* ── Members strip ── */}
+        <div className="hero-members-strip">
+          <span style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 900,
+            fontSize: 20,
+            color: "#C6F03C",
+            lineHeight: 1,
+          }}>
+            {memberCount}+
+          </span>
+          <span style={{
+            fontFamily: "var(--font-body)",
+            fontWeight: 600,
+            fontSize: 13,
+            color: "rgba(255,255,255,0.70)",
+            letterSpacing: "0.02em",
+          }}>
+            Members · Join VUB Smashers
+          </span>
         </div>
       </div>
 
