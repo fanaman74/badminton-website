@@ -76,6 +76,18 @@ export async function createNextSessionAction(dateStr?: string): Promise<{ error
     sessionDate.setUTCHours(h, m, 0, 0);
   }
 
+  // Check for existing session on the same calendar day
+  const dayStart = new Date(sessionDate); dayStart.setUTCHours(0, 0, 0, 0);
+  const dayEnd   = new Date(sessionDate); dayEnd.setUTCHours(23, 59, 59, 999);
+  const { count: existing } = await supabase
+    .from("sessions")
+    .select("id", { count: "exact", head: true })
+    .gte("date", dayStart.toISOString())
+    .lte("date", dayEnd.toISOString());
+  if (existing && existing > 0) {
+    return { error: "A session already exists on that date." };
+  }
+
   const { data, error } = await supabase
     .from("sessions")
     .insert({
