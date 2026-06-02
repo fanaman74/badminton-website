@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserId } from "@/lib/auth";
 import { TeamMemberCard } from "@/components/TeamMemberCard";
+import Link from "next/link";
 
 export default async function TeamPage() {
   const userId = await getCurrentUserId();
@@ -22,6 +23,21 @@ export default async function TeamPage() {
 
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
+      {/* Back to home */}
+      <div style={{ padding: "14px 16px 0" }}>
+        <Link href="/sessions" style={{
+          fontFamily: "var(--font-body)",
+          fontWeight: 600,
+          fontSize: 13,
+          color: "var(--faint)",
+          textDecoration: "none",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+        }}>
+          ← Home
+        </Link>
+      </div>
       {/* Header */}
       <div style={{ padding: "48px 20px 12px" }}>
         <div
