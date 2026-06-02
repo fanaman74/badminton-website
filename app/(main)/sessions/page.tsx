@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserId } from "@/lib/auth";
 import { SessionCard } from "@/components/SessionCard";
 import { HeroBanner } from "@/components/HeroBanner";
-import { NavButtons } from "@/components/NavButtons";
-import { ActiveMembersCTA } from "@/components/ActiveMembersCTA";
 import type { RsvpStatus } from "@/types/database";
 
 export default async function SessionsPage() {
@@ -53,13 +51,7 @@ export default async function SessionsPage() {
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
       {/* Hero banner */}
-      <HeroBanner name={profile?.name ?? "Player"} />
-
-      {/* Navigation grid */}
-      <NavButtons />
-
-      {/* Active members CTA */}
-      <ActiveMembersCTA memberCount={memberCount ?? 0} />
+      <HeroBanner name={profile?.name ?? "Player"} memberCount={memberCount ?? 0} />
 
       {/* Sessions header row */}
       <div style={{ padding: "16px 20px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
