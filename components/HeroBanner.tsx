@@ -115,27 +115,22 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
             padding: 8px 18px;
           }
         }
-        .hero-members-strip {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          z-index: 2;
-          display: flex;
+        .hero-members-card {
+          display: inline-flex;
           align-items: center;
           gap: 10px;
-          padding: 12px 24px;
-          background: rgba(6,12,28,0.80);
-          border-top: 1px solid rgba(198,240,60,0.12);
+          margin-top: 18px;
+          padding: 10px 16px;
+          border-radius: 10px;
+          border: 1px solid rgba(198,240,60,0.20);
+          background: rgba(6,12,28,0.60);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
         }
         @media (min-width: 768px) {
-          .hero-members-strip {
-            padding: 14px 80px;
-          }
-        }
-        @media (min-width: 1200px) {
-          .hero-members-strip {
-            padding: 14px 140px;
+          .hero-members-card {
+            margin-top: 24px;
+            padding: 12px 20px;
           }
         }
       `}</style>
@@ -208,28 +203,28 @@ export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCoun
           <div className="hero-chip">
             👋 Hey, {name.split(" ")[0]}!
           </div>
-        </div>
 
-        {/* ── Members strip ── */}
-        <div className="hero-members-strip">
-          <span style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 900,
-            fontSize: 20,
-            color: "#C6F03C",
-            lineHeight: 1,
-          }}>
-            {memberCount}+
-          </span>
-          <span style={{
-            fontFamily: "var(--font-body)",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "rgba(255,255,255,0.70)",
-            letterSpacing: "0.02em",
-          }}>
-            Members · Join VUB Smashers
-          </span>
+          {/* Members card */}
+          <div className="hero-members-card">
+            <span style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 900,
+              fontSize: 20,
+              color: "#C6F03C",
+              lineHeight: 1,
+            }}>
+              {memberCount}+
+            </span>
+            <span style={{
+              fontFamily: "var(--font-body)",
+              fontWeight: 600,
+              fontSize: 13,
+              color: "rgba(255,255,255,0.70)",
+              letterSpacing: "0.02em",
+            }}>
+              Members · Join VUB Smashers
+            </span>
+          </div>
         </div>
       </div>
 
