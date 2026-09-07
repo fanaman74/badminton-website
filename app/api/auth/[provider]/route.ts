@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getPublicOrigin } from "@/lib/url";
 
 export async function GET(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const returnTo = searchParams.get("returnTo") || "/sessions";
 
-  const origin = request.nextUrl.origin;
+  const origin = getPublicOrigin(request);
   const callbackUrl = `${origin}/api/auth/callback/${provider}`;
 
   if (provider === "google") {
@@ -24,11 +25,15 @@ export async function GET(
       return NextResponse.redirect(googleAuthUrl.toString());
     }
 
-    // Direct OAuth redirect through callback (demo/preview mode when OAuth keys are pending)
-    const previewUrl = new URL(callbackUrl);
-    previewUrl.searchParams.set("demo", "true");
-    previewUrl.searchParams.set("state", returnTo);
-    return NextResponse.redirect(previewUrl.toString());
+    // Google credentials not configured in environment
+    const errorMsg =
+      "Google Sign-In is not configured yet. Please sign in or register with your email address below.";
+    return NextResponse.redirect(
+      new URL(
+        `/auth?error=${encodeURIComponent(errorMsg)}&returnTo=${encodeURIComponent(returnTo)}`,
+        origin
+      )
+    );
   }
 
   if (provider === "facebook") {
@@ -43,11 +48,14 @@ export async function GET(
       return NextResponse.redirect(fbAuthUrl.toString());
     }
 
-    // Direct OAuth redirect through callback (demo/preview mode when OAuth keys are pending)
-    const previewUrl = new URL(callbackUrl);
-    previewUrl.searchParams.set("demo", "true");
-    previewUrl.searchParams.set("state", returnTo);
-    return NextResponse.redirect(previewUrl.toString());
+    const errorMsg =
+      "Facebook Sign-In is not configured yet. Please sign in or register with your email address below.";
+    return NextResponse.redirect(
+      new URL(
+        `/auth?error=${encodeURIComponent(errorMsg)}&returnTo=${encodeURIComponent(returnTo)}`,
+        origin
+      )
+    );
   }
 
   return NextResponse.redirect(new URL(`/auth?error=Unsupported provider ${provider}`, origin));

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { generateSessionToken } from "@/lib/auth";
-
+import { getPublicOrigin } from "@/lib/url";
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -14,7 +14,7 @@ export async function GET(
   const code = searchParams.get("code");
   const isDemo = searchParams.get("demo") === "true";
   const returnTo = searchParams.get("state") || "/sessions";
-  const origin = request.nextUrl.origin;
+  const origin = getPublicOrigin(request);
 
   let email: string | null = null;
   let name: string | null = null;
