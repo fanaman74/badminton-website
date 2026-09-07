@@ -1,17 +1,21 @@
-import { createClient } from "@/lib/supabase/server";
+import { sql, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { signOutAction } from "@/lib/actions/auth";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 
 export default async function YouPage() {
   const userId = await getCurrentUserId();
-  const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, email, role")
-    .eq("id", userId!)
-    .single();
+  const profileRows = userId
+    ? ((await sql`
+        SELECT name, email, role
+        FROM profiles
+        WHERE id = ${userId}
+        LIMIT 1;
+      `) as Pick<Profile, "name" | "email" | "role">[])
+    : [];
+
+  const profile = profileRows[0];
 
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { getCurrentUserId, getCurrentUser } from "@/lib/auth";
 
 export async function createSessionAction(
@@ -12,9 +12,7 @@ export async function createSessionAction(
   const userId = await getCurrentUserId();
   if (!userId) return { error: "Not authenticated" };
 
-  const supabase = await createClient();
   const user = await getCurrentUser();
-
   if (!user || user.role !== "ADMIN") {
     return { error: "Not authorized" };
   }
@@ -33,23 +31,57 @@ export async function createSessionAction(
   const date = new Date(`${dateStr}T${timeStr}Z`).toISOString();
   const maxCapacity = courtsBooked * 4;
 
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert({
-      date,
-      location_name: locationName,
-      location_maps_url: locationMapsUrl,
-      courts_booked: courtsBooked,
-      max_capacity: maxCapacity,
-      created_by: userId,
-    })
-    .select("id")
-    .single();
+  const rows = await sql`
+    INSERT INTO sessions (date, location_name, location_maps_url, courts_booked, max_capacity, created_by)
+    VALUES (${date}, ${locationName}, ${locationMapsUrl}, ${courtsBooked}, ${maxCapacity}, ${userId})
+    RETURNING id;
+  `;
 
-  if (error) return { error: error.message };
+  const newSessionId = rows[0]?.id;
 
   revalidatePath("/sessions");
-  redirect(`/sessions/${(data as { id: string }).id}`);
+  redirect(`/sessions/${newSessionId}`);
+}
+
+export async function updateSessionAction(
+  sessionId: string,
+  _prevState: { error?: string; success?: boolean } | void | undefined,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") {
+    return { error: "Not authorized" };
+  }
+
+  const dateStr = formData.get("date") as string;
+  const timeStr = formData.get("time") as string;
+  const locationName = formData.get("location_name") as string;
+  const locationMapsUrl = (formData.get("location_maps_url") as string) || null;
+  const courtsBooked = parseInt(formData.get("courts_booked") as string, 10);
+
+  if (!dateStr || !timeStr || !locationName || isNaN(courtsBooked) || courtsBooked < 1) {
+    return { error: "Please fill in all required fields." };
+  }
+
+  const date = new Date(`${dateStr}T${timeStr}Z`).toISOString();
+  const maxCapacity = courtsBooked * 4;
+
+  await sql`
+    UPDATE sessions
+    SET date = ${date},
+        location_name = ${locationName},
+        location_maps_url = ${locationMapsUrl},
+        courts_booked = ${courtsBooked},
+        max_capacity = ${maxCapacity}
+    WHERE id = ${sessionId};
+  `;
+
+  revalidatePath("/sessions");
+  revalidatePath(`/sessions/${sessionId}`);
+  return { success: true };
 }
 
 export async function updateSessionStatusAction(
@@ -64,14 +96,11 @@ export async function updateSessionStatusAction(
     return { error: "Not authorized" };
   }
 
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("sessions")
-    .update({ status })
-    .eq("id", sessionId);
-
-  if (error) return { error: error.message };
+  await sql`
+    UPDATE sessions
+    SET status = ${status}
+    WHERE id = ${sessionId};
+  `;
 
   revalidatePath("/sessions");
   revalidatePath(`/sessions/${sessionId}`);
@@ -90,14 +119,10 @@ export async function deleteSessionAction(
     return { error: "Not authorized" };
   }
 
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("sessions")
-    .delete()
-    .eq("id", sessionId);
-
-  if (error) return { error: error.message };
+  await sql`
+    DELETE FROM sessions
+    WHERE id = ${sessionId};
+  `;
 
   revalidatePath("/sessions");
   return { success: true };

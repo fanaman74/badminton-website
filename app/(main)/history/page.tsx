@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -13,45 +13,77 @@ interface PastSession {
   in_count: number;
 }
 
+interface DbPastSessionRow {
+  id: string;
+  date: string;
+  location_name: string;
+  courts_booked: number;
+  max_capacity: number;
+  status: string;
+  user_rsvp_status: string | null;
+  in_count: number;
+}
+
 export default async function HistoryPage() {
   const userId = await getCurrentUserId();
-  if (!userId) redirect("/auth/login");
 
-  const supabase = await createClient();
+  // Fetch completed/past sessions with user's RSVP status and IN count
+  const rows = userId
+    ? ((await sql`
+        SELECT 
+          s.id,
+          s.date,
+          s.location_name,
+          s.courts_booked,
+          s.max_capacity,
+          s.status,
+          (
+            SELECT r.status 
+            FROM rsvps r 
+            WHERE r.session_id = s.id AND r.user_id = ${userId}
+            LIMIT 1
+          ) AS user_rsvp_status,
+          (
+            SELECT COUNT(*)::int
+            FROM rsvps r
+            WHERE r.session_id = s.id AND r.status = 'IN'
+          ) AS in_count
+        FROM sessions s
+        WHERE s.status = 'COMPLETED' OR s.date < NOW()
+        ORDER BY s.date DESC
+        LIMIT 50;
+      `) as DbPastSessionRow[])
+    : ((await sql`
+        SELECT 
+          s.id,
+          s.date,
+          s.location_name,
+          s.courts_booked,
+          s.max_capacity,
+          s.status,
+          NULL AS user_rsvp_status,
+          (
+            SELECT COUNT(*)::int
+            FROM rsvps r
+            WHERE r.session_id = s.id AND r.status = 'IN'
+          ) AS in_count
+        FROM sessions s
+        WHERE s.status = 'COMPLETED' OR s.date < NOW()
+        ORDER BY s.date DESC
+        LIMIT 50;
+      `) as DbPastSessionRow[]);
 
-  // Fetch completed/past sessions with user's RSVP status
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select(
-      `
-      id,
-      date,
-      location_name,
-      courts_booked,
-      max_capacity,
-      status,
-      rsvps(user_id, status)
-    `
-    )
-    .or(`status.eq.COMPLETED,date.lt.${new Date().toISOString()}`)
-    .order("date", { ascending: false })
-    .limit(50);
 
-  const pastSessions: PastSession[] = (sessions ?? []).map((s: any) => {
-    const userRsvp = s.rsvps?.find((r: any) => r.user_id === userId);
-    const inCount = s.rsvps?.filter((r: any) => r.status === "IN").length || 0;
-
-    return {
-      id: s.id,
-      date: s.date,
-      location_name: s.location_name,
-      courts_booked: s.courts_booked,
-      max_capacity: s.max_capacity,
-      status: s.status,
-      rsvp_status: userRsvp?.status || null,
-      in_count: inCount,
-    };
-  });
+  const pastSessions: PastSession[] = (rows ?? []).map((s) => ({
+    id: s.id,
+    date: s.date,
+    location_name: s.location_name,
+    courts_booked: s.courts_booked,
+    max_capacity: s.max_capacity,
+    status: s.status,
+    rsvp_status: s.user_rsvp_status || null,
+    in_count: s.in_count || 0,
+  }));
 
   // Group by month
   const grouped = pastSessions.reduce(
@@ -170,11 +202,12 @@ export default async function HistoryPage() {
                   timeZone: "UTC",
                 });
 
-                const rsvpColor =
-                  statusBadgeColor[session.rsvp_status || "OUT"] ||
-                  statusBadgeColor.OUT;
-                const rsvpLabel =
-                  statusBadgeLabel[session.rsvp_status || "OUT"] || "Not RSVPed";
+                const rsvpColor = session.rsvp_status
+                  ? statusBadgeColor[session.rsvp_status]
+                  : "#1FA463";
+                const rsvpLabel = session.rsvp_status
+                  ? statusBadgeLabel[session.rsvp_status]
+                  : `${session.in_count} played`;
 
                 return (
                   <div
@@ -218,7 +251,7 @@ export default async function HistoryPage() {
                         </div>
                       </div>
 
-                      {/* RSVP badge */}
+                      {/* RSVP or attendee badge */}
                       <div style={{ marginLeft: "auto" }}>
                         <span
                           style={{
@@ -236,6 +269,7 @@ export default async function HistoryPage() {
                         </span>
                       </div>
                     </div>
+
 
                     {/* Location and courts */}
                     <div style={{ marginBottom: 10 }}>

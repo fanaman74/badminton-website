@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function saveTeamConfigAction(
@@ -21,19 +21,18 @@ export async function saveTeamConfigAction(
     return { error: "Please fill in all required fields." };
   }
 
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("team_config").upsert({
-    id: 1,
-    day_of_week,
-    courts,
-    start_time,
-    location_name,
-    location_maps_url,
-    updated_at: new Date().toISOString(),
-  });
-
-  if (error) return { error: error.message };
+  await sql`
+    INSERT INTO team_config (id, day_of_week, courts, start_time, location_name, location_maps_url, updated_at)
+    VALUES (1, ${day_of_week}, ${courts}, ${start_time}, ${location_name}, ${location_maps_url}, NOW())
+    ON CONFLICT (id)
+    DO UPDATE SET
+      day_of_week = EXCLUDED.day_of_week,
+      courts = EXCLUDED.courts,
+      start_time = EXCLUDED.start_time,
+      location_name = EXCLUDED.location_name,
+      location_maps_url = EXCLUDED.location_maps_url,
+      updated_at = NOW();
+  `;
 
   revalidatePath("/admin/config");
   revalidatePath("/admin/sessions/new");
@@ -44,15 +43,22 @@ export async function createNextSessionAction(dateStr?: string): Promise<{ error
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") return { error: "Not authorized." };
 
-  const supabase = await createClient();
+  const configs = await sql`
+    SELECT *
+    FROM team_config
+    WHERE id = 1
+    LIMIT 1;
+  `;
 
-  const { data: config } = await supabase
-    .from("team_config")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  if (!configs || configs.length === 0) return { error: "No config found. Save your court configuration first." };
+  const config = configs[0] as {
+    day_of_week: number;
+    courts: number;
+    start_time: string;
+    location_name: string;
+    location_maps_url: string | null;
+  };
 
-  if (!config) return { error: "No config found. Save your court configuration first." };
   if (!config.location_name) return { error: "Set a default location before creating sessions." };
 
   const [h, m] = config.start_time.split(":").map(Number);
@@ -79,29 +85,24 @@ export async function createNextSessionAction(dateStr?: string): Promise<{ error
   // Check for existing session on the same calendar day
   const dayStart = new Date(sessionDate); dayStart.setUTCHours(0, 0, 0, 0);
   const dayEnd   = new Date(sessionDate); dayEnd.setUTCHours(23, 59, 59, 999);
-  const { count: existing } = await supabase
-    .from("sessions")
-    .select("id", { count: "exact", head: true })
-    .gte("date", dayStart.toISOString())
-    .lte("date", dayEnd.toISOString());
-  if (existing && existing > 0) {
+
+  const existingRows = await sql`
+    SELECT COUNT(*)::int AS count
+    FROM sessions
+    WHERE date >= ${dayStart.toISOString()}
+      AND date <= ${dayEnd.toISOString()};
+  `;
+
+  if (existingRows && existingRows[0]?.count > 0) {
     return { error: "A session already exists on that date." };
   }
 
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert({
-      date: sessionDate.toISOString(),
-      location_name: config.location_name,
-      location_maps_url: config.location_maps_url,
-      courts_booked: config.courts,
-      max_capacity: config.courts * 4,
-      created_by: user.id,
-    })
-    .select("id")
-    .single();
+  const rows = await sql`
+    INSERT INTO sessions (date, location_name, location_maps_url, courts_booked, max_capacity, created_by)
+    VALUES (${sessionDate.toISOString()}, ${config.location_name}, ${config.location_maps_url}, ${config.courts}, ${config.courts * 4}, ${user.id})
+    RETURNING id;
+  `;
 
-  if (error) return { error: error.message };
   revalidatePath("/sessions");
-  return { id: (data as { id: string }).id };
+  return { id: rows[0]?.id as string };
 }

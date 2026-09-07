@@ -1,60 +1,22 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { v4 as uuidv4 } from "uuid";
+import { generateSessionToken } from "@/lib/auth";
+
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
-function generateSessionToken(): string {
-  return uuidv4().replace(/-/g, "") + uuidv4().replace(/-/g, "");
-}
 
-export async function loginAction(
-  _prevState: { error?: string } | undefined,
-  formData: FormData
-): Promise<{ error?: string } | undefined> {
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const password = formData.get("password") as string;
-
-  if (!email || !password) {
-    return { error: "Please enter your email and password." };
-  }
-
-  // Password is the shared team password
-  if (password !== process.env.INVITE_CODE) {
-    return { error: "Incorrect password." };
-  }
-
-  const supabase = await createClient();
-
-  // Look up profile by email
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", email)
-    .single();
-
-  if (profileError || !profile) {
-    return { error: "Email not registered. Contact your team admin." };
-  }
-
-  // Create session token
+export async function createSessionForUser(userId: string, returnTo: string = "/sessions") {
   const sessionToken = generateSessionToken();
 
-  const { error: sessionError } = await supabase
-    .from("user_sessions")
-    .insert({
-      user_id: profile.id,
-      token: sessionToken,
-    });
+  await sql`
+    INSERT INTO user_sessions (user_id, token) 
+    VALUES (${userId}, ${sessionToken});
+  `;
 
-  if (sessionError) {
-    return { error: "Failed to create session. Please try again." };
-  }
-
-  // Set session cookie
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
@@ -64,11 +26,54 @@ export async function loginAction(
     path: "/",
   });
 
-  redirect("/sessions");
+  redirect(returnTo);
+}
+
+export async function emailAuthAction(
+  _prevState: { error?: string; success?: boolean } | undefined,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean } | undefined> {
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const name = (formData.get("name") as string)?.trim();
+  const returnTo = (formData.get("returnTo") as string) || "/sessions";
+
+  if (!email || !email.includes("@")) {
+    return { error: "Please enter a valid email address." };
+  }
+
+  // Check if user already exists
+  const existingRows = await sql`
+    SELECT id, name
+    FROM profiles 
+    WHERE LOWER(email) = ${email} 
+    LIMIT 1;
+  `;
+
+  let userId: string;
+
+  if (existingRows && existingRows.length > 0) {
+    userId = existingRows[0].id as string;
+  } else {
+    // New joiner registration
+    const playerName = name || email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    
+    const insertRows = await sql`
+      INSERT INTO profiles (name, email, role)
+      VALUES (${playerName}, ${email}, 'PLAYER')
+      RETURNING id;
+    `;
+    userId = insertRows[0]?.id as string;
+  }
+
+  await createSessionForUser(userId, returnTo);
 }
 
 export async function signOutAction() {
   const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (token) {
+    await sql`DELETE FROM user_sessions WHERE token = ${token};`;
+  }
   cookieStore.delete(SESSION_COOKIE_NAME);
-  redirect("/auth");
+  redirect("/sessions");
 }

@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { v4 as uuidv4 } from "uuid";
+import { sql } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 type TeamMember = {
   name: string;
@@ -12,39 +12,44 @@ type TeamMember = {
 export async function setupTeamAction(
   members: TeamMember[]
 ): Promise<{ error?: string; created?: string[]; skipped?: string[] }> {
-  const supabase = await createClient();
+  // Allow setup only if no profiles exist yet, OR if an authenticated admin is running it
+  const user = await getCurrentUser();
+  const profileCountRows = await sql`SELECT COUNT(*)::int AS count FROM profiles;`;
+  const count = profileCountRows[0]?.count ?? 0;
+
+  if (count > 0 && (!user || user.role !== "ADMIN")) {
+    return { error: "Setup can only be run by an administrator once profiles exist." };
+  }
 
   const created: string[] = [];
   const skipped: string[] = [];
 
   for (const member of members) {
-    const email = member.email.toLowerCase();
+    const email = member.email.trim().toLowerCase();
+    const name = member.name.trim();
+
+    if (!name || !email) continue;
 
     // Check if profile with this email already exists
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .single();
+    const existing = await sql`
+      SELECT id 
+      FROM profiles 
+      WHERE LOWER(email) = ${email} 
+      LIMIT 1;
+    `;
 
-    if (existing) {
-      skipped.push(member.name);
+    if (existing && existing.length > 0) {
+      skipped.push(name);
       continue;
     }
 
     // Create new profile
-    const { error } = await supabase.from("profiles").insert({
-      id: uuidv4(),
-      name: member.name,
-      email,
-      role: member.role,
-    });
+    await sql`
+      INSERT INTO profiles (name, email, role)
+      VALUES (${name}, ${email}, ${member.role});
+    `;
 
-    if (error) {
-      return { error: `Failed to create profile for ${member.name}: ${error.message}` };
-    }
-
-    created.push(member.name);
+    created.push(name);
   }
 
   return { created, skipped };

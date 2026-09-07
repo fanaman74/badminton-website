@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function addCommentAction(
@@ -18,14 +18,10 @@ export async function addCommentAction(
   if (!body) return { error: "Comment cannot be empty" };
   if (body.length > 1000) return { error: "Comment is too long (max 1000 characters)" };
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("session_comments").insert({
-    session_id: sessionId,
-    author_id: user.id,
-    body,
-  });
-
-  if (error) return { error: error.message };
+  await sql`
+    INSERT INTO session_comments (session_id, author_id, body)
+    VALUES (${sessionId}, ${user.id}, ${body});
+  `;
 
   revalidatePath(`/sessions/${sessionId}`);
   return { success: true };
@@ -39,14 +35,10 @@ export async function deleteCommentAction(
   if (!user) return { error: "Not authenticated" };
   if (user.role !== "ADMIN") return { error: "Not authorized" };
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("session_comments")
-    .delete()
-    .eq("id", commentId)
-    .eq("author_id", user.id);
-
-  if (error) return { error: error.message };
+  await sql`
+    DELETE FROM session_comments
+    WHERE id = ${commentId} AND author_id = ${user.id};
+  `;
 
   revalidatePath(`/sessions/${sessionId}`);
   return { success: true };

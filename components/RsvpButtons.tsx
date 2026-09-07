@@ -3,16 +3,19 @@
 import { useState, useTransition } from "react";
 import { updateRsvp } from "@/lib/actions/rsvp";
 import type { RsvpStatus } from "@/types/database";
+import { AuthModal } from "@/components/AuthModal";
 
 interface Props {
   sessionId: string;
   currentStatus: RsvpStatus | null;
   isFull: boolean;
+  isAuthenticated?: boolean;
 }
 
-export function RsvpButtons({ sessionId, currentStatus, isFull }: Props) {
+export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated = true }: Props) {
   const [status, setStatus] = useState<RsvpStatus | null>(currentStatus);
   const [isPending, startTransition] = useTransition();
+  const [authOpen, setAuthOpen] = useState(false);
 
   const activeKey = status === "WAITLIST" ? "IN" : status;
 
@@ -23,6 +26,10 @@ export function RsvpButtons({ sessionId, currentStatus, isFull }: Props) {
   ];
 
   function handleRsvp(key: "IN" | "MAYBE" | "OUT") {
+    if (!isAuthenticated) {
+      setAuthOpen(true);
+      return;
+    }
     startTransition(async () => {
       const result = await updateRsvp(sessionId, key);
       if (result.status) setStatus(result.status);
@@ -36,49 +43,86 @@ export function RsvpButtons({ sessionId, currentStatus, isFull }: Props) {
   };
 
   return (
-    <div style={{
-      position: "fixed", bottom: 65, left: 0, right: 0, zIndex: 20,
-      padding: "12px 16px 16px", background: "var(--surface)",
-      borderTop: "1px solid var(--line)",
-      boxShadow: "0 -8px 24px -18px rgba(20,18,12,.5)",
-    }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 9 }}>
-        {opts.map((o) => {
-          const on = activeKey === o.key;
-          return (
-            <button
-              key={o.key}
-              onClick={() => handleRsvp(o.key)}
-              disabled={isPending}
-              style={{
-                border: on ? "none" : "1.5px solid var(--line)",
-                cursor: "pointer",
-                background: on ? o.color : "var(--surface)",
-                color: on ? "#fff" : "var(--ink)",
-                borderRadius: "var(--r-md)",
-                padding: "14px 8px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 5,
-                fontFamily: "var(--font-display)",
-                fontWeight: 800,
-                fontSize: 15.5,
-                boxShadow: on ? `0 8px 20px -8px ${o.color}` : "none",
-                transform: on ? "translateY(-1px)" : "none",
-                transition: "all .18s ease",
-                opacity: isPending ? 0.7 : 1,
-              }}
-            >
-              <span style={{ display: "flex", color: on ? "#fff" : o.color }}>
-                {icons[o.key]}
-              </span>
-              {o.label}
-            </button>
-          );
-        })}
+    <>
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 20,
+        padding: "12px 16px 16px", background: "var(--surface)",
+        borderTop: "1px solid var(--line)",
+        boxShadow: "0 -8px 24px -18px rgba(20,18,12,.5)",
+      }}>
+        {!isAuthenticated ? (
+          <button
+            type="button"
+            onClick={() => setAuthOpen(true)}
+            style={{
+              width: "100%",
+              border: "none",
+              cursor: "pointer",
+              background: "var(--brand)",
+              color: "#fff",
+              borderRadius: "var(--r-md)",
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: 16,
+              boxShadow: "0 8px 20px -8px var(--brand)",
+              transition: "all .18s ease",
+            }}
+          >
+            <span>🏸 Sign In / Join to RSVP</span>
+            <span>→</span>
+          </button>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 9 }}>
+            {opts.map((o) => {
+              const on = activeKey === o.key;
+              return (
+                <button
+                  key={o.key}
+                  onClick={() => handleRsvp(o.key)}
+                  disabled={isPending}
+                  style={{
+                    border: on ? "none" : "1.5px solid var(--line)",
+                    cursor: "pointer",
+                    background: on ? o.color : "var(--surface)",
+                    color: on ? "#fff" : "var(--ink)",
+                    borderRadius: "var(--r-md)",
+                    padding: "14px 8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 5,
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 800,
+                    fontSize: 15.5,
+                    boxShadow: on ? `0 8px 20px -8px ${o.color}` : "none",
+                    transform: on ? "translateY(-1px)" : "none",
+                    transition: "all .18s ease",
+                    opacity: isPending ? 0.7 : 1,
+                  }}
+                >
+                  <span style={{ display: "flex", color: on ? "#fff" : o.color }}>
+                    {icons[o.key]}
+                  </span>
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
+
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        initialMode="signup"
+        returnTo={`/sessions/${sessionId}`}
+      />
+    </>
   );
 }
 
@@ -91,3 +135,4 @@ function MaybeIcon() {
 function XIcon() {
   return <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>;
 }
+

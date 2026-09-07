@@ -1,24 +1,27 @@
-import { createClient } from "@/lib/supabase/server";
+import { sql, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { TeamMemberCard } from "@/components/TeamMemberCard";
 
 export default async function TeamPage() {
   const userId = await getCurrentUserId();
-  const supabase = await createClient();
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, name, email, role")
-    .order("name", { ascending: true });
+  const profiles = (await sql`
+    SELECT id, name, email, role
+    FROM profiles
+    ORDER BY name ASC;
+  `) as Pick<Profile, "id" | "name" | "email" | "role">[];
 
-  const { data: currentUserProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId!)
-    .single();
+  const currentUserRows = userId
+    ? await sql`
+        SELECT role
+        FROM profiles
+        WHERE id = ${userId}
+        LIMIT 1;
+      `
+    : [];
 
+  const currentUserIsAdmin = currentUserRows[0]?.role === "ADMIN";
   const list = profiles ?? [];
-  const currentUserIsAdmin = currentUserProfile?.role === "ADMIN";
 
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>

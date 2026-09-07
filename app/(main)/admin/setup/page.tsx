@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,29 +9,31 @@ async function promoteToAdminAction() {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/auth");
 
-  const supabase = await createClient();
-
   // Only works if no admins exist yet
-  const { count } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .eq("role", "ADMIN");
+  const rows = await sql`
+    SELECT COUNT(*)::int AS count
+    FROM profiles
+    WHERE role = 'ADMIN';
+  `;
 
-  if ((count ?? 0) > 0) redirect("/sessions");
+  if ((rows[0]?.count ?? 0) > 0) redirect("/sessions");
 
-  await supabase.from("profiles").update({ role: "ADMIN" as const }).eq("id", userId);
+  await sql`
+    UPDATE profiles
+    SET role = 'ADMIN'
+    WHERE id = ${userId};
+  `;
   redirect("/sessions");
 }
 
 export default async function AdminSetupPage() {
-  const supabase = await createClient();
+  const rows = await sql`
+    SELECT COUNT(*)::int AS count
+    FROM profiles
+    WHERE role = 'ADMIN';
+  `;
 
-  const { count } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .eq("role", "ADMIN");
-
-  if ((count ?? 0) > 0) redirect("/sessions");
+  if ((rows[0]?.count ?? 0) > 0) redirect("/sessions");
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] px-4">

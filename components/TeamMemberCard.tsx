@@ -71,6 +71,7 @@ export function TeamMemberCard({
   return (
     <div
       style={{
+        position: "relative",
         background: "var(--surface)",
         borderRadius: "var(--r-lg)",
         padding: 12,

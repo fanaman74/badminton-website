@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { sql } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 
 export async function updateProfileAction(
@@ -11,9 +11,8 @@ export async function updateProfileAction(
   const userId = await getCurrentUserId();
   if (!userId) return { error: "Not authenticated" };
 
-  const supabase = await createClient();
   const name = (formData.get("name") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim();
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
 
   if (!name) {
     return { error: "Name is required" };
@@ -24,23 +23,23 @@ export async function updateProfileAction(
   }
 
   // Check if email is already taken by another user
-  const { data: existingEmail } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", email)
-    .neq("id", userId)
-    .single();
+  const existingRows = await sql`
+    SELECT id
+    FROM profiles
+    WHERE LOWER(email) = ${email}
+      AND id != ${userId}
+    LIMIT 1;
+  `;
 
-  if (existingEmail) {
+  if (existingRows && existingRows.length > 0) {
     return { error: "This email is already in use" };
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ name, email })
-    .eq("id", userId);
-
-  if (error) return { error: error.message };
+  await sql`
+    UPDATE profiles
+    SET name = ${name}, email = ${email}
+    WHERE id = ${userId};
+  `;
 
   revalidatePath("/you");
   return { success: true };
@@ -53,16 +52,15 @@ export async function updateUserRoleAction(
   const userId = await getCurrentUserId();
   if (!userId) return { error: "Not authenticated" };
 
-  const supabase = await createClient();
-
   // Check if current user is admin
-  const { data: currentUser } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single();
+  const currentUsers = await sql`
+    SELECT role
+    FROM profiles
+    WHERE id = ${userId}
+    LIMIT 1;
+  `;
 
-  if (!currentUser || currentUser.role !== "ADMIN") {
+  if (!currentUsers || currentUsers[0]?.role !== "ADMIN") {
     return { error: "Not authorized" };
   }
 
@@ -71,12 +69,11 @@ export async function updateUserRoleAction(
     return { error: "You cannot remove your own admin status" };
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: newRole })
-    .eq("id", targetUserId);
-
-  if (error) return { error: error.message };
+  await sql`
+    UPDATE profiles
+    SET role = ${newRole}
+    WHERE id = ${targetUserId};
+  `;
 
   revalidatePath("/team");
   return { success: true };

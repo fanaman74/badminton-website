@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useActionState } from "react";
+import { useState, useEffect, useActionState } from "react";
 import { updateProfileAction } from "@/lib/actions/profile";
 
 interface ProfileEditFormProps {
@@ -23,14 +22,15 @@ export function ProfileEditForm({
     undefined
   );
 
+  useEffect(() => {
+    if (state?.success) {
+      const timer = setTimeout(() => setIsEditing(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [state?.success]);
+
   const handleCancel = () => {
     setIsEditing(false);
-  };
-
-  const handleSuccess = () => {
-    if (state?.success) {
-      setIsEditing(false);
-    }
   };
 
   if (isEditing) {

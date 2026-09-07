@@ -1,39 +1,48 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { sql, type Session, type RsvpStatus, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { SessionCard } from "@/components/SessionCard";
 import { HeroBanner } from "@/components/HeroBanner";
-import type { RsvpStatus } from "@/types/database";
 
 export default async function SessionsPage() {
   const userId = await getCurrentUserId();
-  const supabase = await createClient();
 
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("status", "UPCOMING")
-    .order("date", { ascending: true });
+  const sessions = (await sql`
+    SELECT *
+    FROM sessions
+    WHERE status = 'UPCOMING'
+    ORDER BY date ASC;
+  `) as Session[];
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, role")
-    .eq("id", userId!)
-    .single();
+  const profileRows = userId
+    ? ((await sql`
+        SELECT name, role
+        FROM profiles
+        WHERE id = ${userId}
+        LIMIT 1;
+      `) as Pick<Profile, "name" | "role">[])
+    : [];
+  const profile = profileRows[0];
 
-  const { data: inRsvps } = await supabase
-    .from("rsvps")
-    .select("session_id")
-    .eq("status", "IN");
+  const inRsvps = (await sql`
+    SELECT session_id
+    FROM rsvps
+    WHERE status = 'IN';
+  `) as { session_id: string }[];
 
-  const { data: myRsvps } = await supabase
-    .from("rsvps")
-    .select("session_id, status")
-    .eq("user_id", userId!);
+  const myRsvps = userId
+    ? ((await sql`
+        SELECT session_id, status
+        FROM rsvps
+        WHERE user_id = ${userId};
+      `) as { session_id: string; status: RsvpStatus }[])
+    : [];
 
-  const { count: memberCount } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact", head: true });
+  const countRows = (await sql`
+    SELECT COUNT(*)::int AS count
+    FROM profiles;
+  `) as { count: number }[];
+  const memberCount = countRows[0]?.count ?? 0;
 
   const inCountBySession = (inRsvps ?? []).reduce<Record<string, number>>(
     (acc, r) => ({ ...acc, [r.session_id]: (acc[r.session_id] ?? 0) + 1 }),
@@ -41,7 +50,7 @@ export default async function SessionsPage() {
   );
 
   const myStatusBySession = (myRsvps ?? []).reduce<Record<string, RsvpStatus>>(
-    (acc, r) => ({ ...acc, [r.session_id]: r.status as RsvpStatus }),
+    (acc, r) => ({ ...acc, [r.session_id]: r.status }),
     {}
   );
 
@@ -51,7 +60,7 @@ export default async function SessionsPage() {
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
       {/* Hero banner */}
-      <HeroBanner name={profile?.name ?? "Player"} memberCount={memberCount ?? 0} />
+      <HeroBanner name={profile?.name ?? "Player"} memberCount={memberCount} isGuest={!userId} />
 
       {/* Sessions header row */}
       <div style={{ padding: "16px 20px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>

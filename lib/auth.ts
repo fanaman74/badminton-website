@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { sql, type Profile } from "@/lib/db";
+import { v4 as uuidv4 } from "uuid";
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -11,36 +12,44 @@ export async function getCurrentUserId(): Promise<string | null> {
     return null;
   }
 
-  const supabase = await createClient();
+  const rows = await sql`
+    SELECT user_id 
+    FROM user_sessions 
+    WHERE token = ${sessionToken} 
+      AND expires_at >= NOW() 
+    LIMIT 1;
+  `;
 
-  const { data, error } = await supabase
-    .from("user_sessions")
-    .select("user_id")
-    .eq("token", sessionToken)
-    .gte("expires_at", new Date().toISOString())
-    .single();
-
-  if (error || !data) {
+  if (!rows || rows.length === 0) {
     return null;
   }
 
-  return data.user_id;
+  return rows[0].user_id as string;
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<Profile | null> {
   const userId = await getCurrentUserId();
 
   if (!userId) {
     return null;
   }
 
-  const supabase = await createClient();
+  const rows = await sql`
+    SELECT * 
+    FROM profiles 
+    WHERE id = ${userId} 
+    LIMIT 1;
+  `;
 
-  const { data } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  if (!rows || rows.length === 0) {
+    return null;
+  }
 
-  return data;
+  return rows[0] as Profile;
 }
+
+export function generateSessionToken(): string {
+  return uuidv4().replace(/-/g, "") + uuidv4().replace(/-/g, "");
+}
+
+

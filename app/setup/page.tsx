@@ -5,36 +5,35 @@ import { setupTeamAction } from "@/lib/actions/setup";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const TEAM_MEMBERS = [
-  { name: "Marika Vernon",     email: "marika.vernon@yahoo.co.uk",         role: "PLAYER" as const },
-  { name: "O. Opraestegaard", email: "opraestegaard@gmail.com",            role: "PLAYER" as const },
-  { name: "Isabel",            email: "jetisa@yahoo.com",                   role: "PLAYER" as const },
-  { name: "Sarah Turner",      email: "sarah.turner@ec.europa.eu",          role: "PLAYER" as const },
-  { name: "Fred Anaman",       email: "fredanaman@proton.me",               role: "ADMIN"  as const },
-  { name: "Wayne",             email: "water.works@skynet.be",              role: "PLAYER" as const },
-  { name: "Molly",             email: "mollrog@hotmail.com",                role: "PLAYER" as const },
-  { name: "Kamil Baranik",     email: "kamilbaranik@gmail.com",             role: "PLAYER" as const },
-  { name: "Dali Sherpa-haar",  email: "dalishaar@hotmail.com",              role: "PLAYER" as const },
-  { name: "Paul Moody",        email: "paulsmoody@yahoo.co.uk",             role: "PLAYER" as const },
-  { name: "Cristina Sima",     email: "cristina21sima@hotmail.com",         role: "PLAYER" as const },
-  { name: "Soren Sogaard",     email: "soren.sogaard@europarl.europa.eu",   role: "PLAYER" as const },
-  { name: "Michael O'Brien",   email: "michael.obrien@europarl.europa.eu",  role: "PLAYER" as const },
-  { name: "Piotr Banski",      email: "piotr.banski@ec.europa.eu",          role: "PLAYER" as const },
-  { name: "A. Bootland",       email: "abootland@hotmail.com",              role: "PLAYER" as const },
-  { name: "Patryk Lozinski",   email: "patryk.lozinski@gmail.com",          role: "PLAYER" as const },
-  { name: "Marcel Grijsen",    email: "marcel.grijsen@sita.aero",            role: "PLAYER" as const },
-];
-
 export default function SetupPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [created, setCreated] = useState<string[]>([]);
   const [skipped, setSkipped] = useState<string[]>([]);
 
+  const [membersText, setMembersText] = useState("");
+
   async function handleSetup() {
     setStatus("loading");
     setMessage("");
-    const result = await setupTeamAction(TEAM_MEMBERS);
+
+    // Parse lines: "Name, email, ADMIN" or "Name, email"
+    const lines = membersText.split("\n").map((l) => l.trim()).filter(Boolean);
+    const members = lines.map((line) => {
+      const parts = line.split(",").map((p) => p.trim());
+      const name = parts[0] || "";
+      const email = parts[1] || "";
+      const role = (parts[2]?.toUpperCase() === "ADMIN" ? "ADMIN" : "PLAYER") as "ADMIN" | "PLAYER";
+      return { name, email, role };
+    }).filter((m) => m.name && m.email);
+
+    if (members.length === 0) {
+      setStatus("error");
+      setMessage("Please enter at least one member (format: Name, email@domain.com, role)");
+      return;
+    }
+
+    const result = await setupTeamAction(members);
     if (result.error) {
       setStatus("error");
       setMessage(result.error);
@@ -52,32 +51,26 @@ export default function SetupPage() {
           <div className="text-4xl mb-2">🏸</div>
           <h1 className="text-2xl font-bold text-slate-900">Team Setup</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Creates profiles for all team members. Safe to run multiple times.
+            Import initial team member profiles into Neon Postgres.
           </p>
         </div>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Team members ({TEAM_MEMBERS.length})</CardTitle>
+            <CardTitle className="text-base">Add Members</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-1.5 mb-4">
-              {TEAM_MEMBERS.map((m) => (
-                <div
-                  key={m.email}
-                  className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100"
-                >
-                  <span className="text-sm font-medium text-slate-800">{m.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">{m.email}</span>
-                    {m.role === "ADMIN" && (
-                      <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">
-                        admin
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Enter one member per line: <code>Name, email@domain.com, [ADMIN|PLAYER]</code>
+              </label>
+              <textarea
+                rows={6}
+                value={membersText}
+                onChange={(e) => setMembersText(e.target.value)}
+                placeholder={"Alex Tan, alex@example.com, ADMIN\nBen Wong, ben@example.com, PLAYER"}
+                className="w-full text-sm font-mono p-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
             </div>
 
             {status === "idle" && (
@@ -85,7 +78,7 @@ export default function SetupPage() {
                 onClick={handleSetup}
                 className="w-full h-11 bg-green-600 hover:bg-green-700 text-white"
               >
-                Create all profiles
+                Create profiles
               </Button>
             )}
 
@@ -134,10 +127,6 @@ export default function SetupPage() {
             )}
           </CardContent>
         </Card>
-
-        <p className="text-center text-xs text-slate-400">
-          Password for all members: <strong>Smash2026!!!</strong>
-        </p>
       </div>
     </div>
   );

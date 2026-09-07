@@ -1,234 +1,323 @@
 "use client";
 
-export function HeroBanner({ name, memberCount = 0 }: { name: string; memberCount?: number }) {
+import { useState } from "react";
+import { AuthModal } from "@/components/AuthModal";
+
+export function HeroBanner({
+  name,
+  memberCount = 0,
+  isGuest = false,
+}: {
+  name: string;
+  memberCount?: number;
+  isGuest?: boolean;
+}) {
+  const [authOpen, setAuthOpen] = useState(false);
+
   return (
-    <div style={{ position: "relative", marginBottom: 4 }}>
-      <style>{`
-        .hero-panel-responsive {
-          position: relative;
-          overflow: hidden;
-          height: 65vh;
-        }
-        @media (min-width: 768px) {
+    <>
+      <div style={{ position: "relative", marginBottom: 4 }}>
+        <style>{`
           .hero-panel-responsive {
-            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            height: 65vh;
           }
-        }
-        .hero-text-block {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          z-index: 2;
-          padding: 32px 24px;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 768px) {
+            .hero-panel-responsive {
+              height: 100vh;
+            }
+          }
           .hero-text-block {
-            padding: 48px 80px;
-            max-width: 60%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            padding: 32px 24px;
+            width: 100%;
+            box-sizing: border-box;
           }
-        }
-        @media (min-width: 1200px) {
-          .hero-text-block {
-            padding: 48px 140px;
-            max-width: 50%;
+          @media (min-width: 768px) {
+            .hero-text-block {
+              padding: 48px 80px;
+              max-width: 60%;
+            }
           }
-        }
-        .hero-eyebrow {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          margin-bottom: 14px;
-          font-family: var(--font-body);
-          font-weight: 700;
-          font-size: 10px;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          color: #C6F03C;
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 1200px) {
+            .hero-text-block {
+              padding: 48px 140px;
+              max-width: 50%;
+            }
+          }
           .hero-eyebrow {
-            font-size: 13px;
-            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #C6F03C;
           }
-        }
-        .hero-title-main {
-          font-size: 56px;
-        }
-        .hero-title-sub {
-          font-size: 46px;
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 768px) {
+            .hero-eyebrow {
+              font-size: 13px;
+              margin-bottom: 20px;
+            }
+          }
           .hero-title-main {
-            font-size: 88px;
+            font-size: 56px;
           }
           .hero-title-sub {
-            font-size: 72px;
+            font-size: 46px;
           }
-        }
-        .hero-squiggle {
-          width: 160px;
-          height: 10px;
-          margin-top: 8px;
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 768px) {
+            .hero-title-main {
+              font-size: 88px;
+            }
+            .hero-title-sub {
+              font-size: 72px;
+            }
+          }
           .hero-squiggle {
-            width: 280px;
-            height: 16px;
-            margin-top: 14px;
+            width: 160px;
+            height: 10px;
+            margin-top: 8px;
           }
-        }
-        .hero-subtitle {
-          margin-top: 14px;
-          font-family: var(--font-body);
-          font-weight: 400;
-          font-size: 14px;
-          color: rgba(255,255,255,0.55);
-          line-height: 1.5;
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 768px) {
+            .hero-squiggle {
+              width: 280px;
+              height: 16px;
+              margin-top: 14px;
+            }
+          }
           .hero-subtitle {
-            font-size: 18px;
-            margin-top: 24px;
-            max-width: 480px;
+            margin-top: 14px;
+            font-family: var(--font-body);
+            font-weight: 400;
+            font-size: 14px;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.5;
           }
-        }
-        .hero-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          margin-top: 18px;
-          padding: 6px 14px;
-          border-radius: 999px;
-          border: 1px solid rgba(198,240,60,0.3);
-          background: rgba(198,240,60,0.08);
-          font-family: var(--font-body);
-          font-weight: 700;
-          font-size: 12px;
-          color: rgba(255,255,255,0.75);
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 768px) {
+            .hero-subtitle {
+              font-size: 18px;
+              margin-top: 24px;
+              max-width: 480px;
+            }
+          }
           .hero-chip {
-            font-size: 15px;
-            margin-top: 28px;
-            padding: 8px 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 18px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(198,240,60,0.3);
+            background: rgba(198,240,60,0.08);
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 12px;
+            color: rgba(255,255,255,0.75);
           }
-        }
-        .hero-members-card {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-top: 12px;
-          width: fit-content;
-          padding: 10px 16px;
-          border-radius: 10px;
-          border: 1px solid rgba(198,240,60,0.20);
-          background: rgba(6,12,28,0.60);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-        }
-        @media (min-width: 768px) {
+          @media (min-width: 768px) {
+            .hero-chip {
+              font-size: 15px;
+              margin-top: 28px;
+              padding: 8px 18px;
+            }
+          }
+          .hero-cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 10px 22px;
+            border-radius: 999px;
+            border: none;
+            background: #C6F03C;
+            color: #060C1C;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 14px;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(198,240,60,0.4);
+            transition: all 0.18s ease;
+          }
+          .hero-cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(198,240,60,0.6);
+          }
           .hero-members-card {
-            margin-top: 24px;
-            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            width: fit-content;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(198,240,60,0.20);
+            background: rgba(6,12,28,0.60);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
           }
-        }
-      `}</style>
+          @media (min-width: 768px) {
+            .hero-members-card {
+              margin-top: 24px;
+              padding: 12px 20px;
+            }
+          }
+        `}</style>
 
-      {/* ── Main hero panel ── */}
-      <div className="hero-panel-responsive">
+        {/* ── Main hero panel ── */}
+        <div className="hero-panel-responsive">
+          {/* Full-bleed background photo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero-player.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center top",
+              pointerEvents: "none",
+            }}
+          />
 
-        {/* Full-bleed background photo */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero-player.png"
-          alt=""
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center top",
-            pointerEvents: "none",
-          }}
-        />
+          {/* Dark overlay — heavy on left where text sits, lighter on right */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background:
+                "linear-gradient(100deg, rgba(4,8,20,0.92) 0%, rgba(4,8,20,0.75) 40%, rgba(4,8,20,0.25) 70%, rgba(4,8,20,0.10) 100%)",
+            }}
+          />
 
-        {/* Dark overlay — heavy on left where text sits, lighter on right */}
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: "linear-gradient(100deg, rgba(4,8,20,0.92) 0%, rgba(4,8,20,0.75) 40%, rgba(4,8,20,0.25) 70%, rgba(4,8,20,0.10) 100%)",
-        }}/>
+          {/* Top fade */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background:
+                "linear-gradient(180deg, rgba(4,8,20,0.65) 0%, transparent 25%)",
+            }}
+          />
 
-        {/* Top fade */}
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: "linear-gradient(180deg, rgba(4,8,20,0.65) 0%, transparent 25%)",
-        }}/>
+          {/* ── Text block ── */}
+          <div className="hero-text-block">
+            {/* Eyebrow */}
+            <div className="hero-eyebrow">🏸 VUB Smashers</div>
 
-        {/* ── Text block ── */}
-        <div className="hero-text-block">
+            {/* Headline */}
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 900,
+                lineHeight: 1.0,
+                letterSpacing: "-0.03em",
+              }}
+            >
+              <div className="hero-title-main" style={{ color: "#FFFFFF" }}>
+                Play.
+              </div>
+              <div className="hero-title-main" style={{ color: "#00E5FF" }}>
+                Train.
+              </div>
+              <div className="hero-title-main" style={{ color: "#C6F03C" }}>
+                Win.
+              </div>
+              <div
+                className="hero-title-sub"
+                style={{ color: "#FFFFFF", marginTop: 4 }}
+              >
+                Together.
+              </div>
+            </div>
 
-          {/* Eyebrow */}
-          <div className="hero-eyebrow">
-            🏸 VUB Smashers
-          </div>
+            {/* Lime squiggle underline */}
+            <div className="hero-squiggle">
+              <svg viewBox="0 0 152 9" width="100%" height="100%">
+                <path
+                  d="M2 6.5 Q38 1.5 76 4.5 Q114 7.5 150 3.5"
+                  stroke="#C6F03C"
+                  strokeWidth="3"
+                  fill="none"
+                  strokeLinecap="round"
+                  opacity="0.9"
+                />
+              </svg>
+            </div>
 
-          {/* Headline */}
-          <div style={{
-            fontFamily: "var(--font-display)", fontWeight: 900,
-            lineHeight: 1.0, letterSpacing: "-0.03em",
-          }}>
-            <div className="hero-title-main" style={{ color: "#FFFFFF" }}>Play.</div>
-            <div className="hero-title-main" style={{ color: "#00E5FF" }}>Train.</div>
-            <div className="hero-title-main" style={{ color: "#C6F03C" }}>Win.</div>
-            <div className="hero-title-sub" style={{ color: "#FFFFFF", marginTop: 4 }}>Together.</div>
-          </div>
+            {/* Subtitle */}
+            <div className="hero-subtitle">
+              A community of passion, dedication and love for badminton.
+            </div>
 
-          {/* Lime squiggle underline */}
-          <div className="hero-squiggle">
-            <svg viewBox="0 0 152 9" width="100%" height="100%">
-              <path d="M2 6.5 Q38 1.5 76 4.5 Q114 7.5 150 3.5"
-                stroke="#C6F03C" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9"/>
-            </svg>
-          </div>
+            {/* Personalized chip or Join CTA */}
+            {isGuest || name === "Player" ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+                <div className="hero-chip">
+                  👋 Welcome to the club!
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuthOpen(true)}
+                  className="hero-cta-btn"
+                >
+                  <span>🏸 Join Team / Sign In</span>
+                  <span>→</span>
+                </button>
+              </div>
+            ) : (
+              <div className="hero-chip">👋 Hey, {name.split(" ")[0]}!</div>
+            )}
 
-          {/* Subtitle */}
-          <div className="hero-subtitle">
-            A community of passion, dedication and love for badminton.
-          </div>
-
-          {/* Personalised chip */}
-          <div className="hero-chip">
-            👋 Hey, {name.split(" ")[0]}!
-          </div>
-
-          {/* Members card */}
-          <div className="hero-members-card">
-            <span style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 900,
-              fontSize: 20,
-              color: "#C6F03C",
-              lineHeight: 1,
-            }}>
-              {memberCount}+
-            </span>
-            <span style={{
-              fontFamily: "var(--font-body)",
-              fontWeight: 600,
-              fontSize: 13,
-              color: "rgba(255,255,255,0.70)",
-              letterSpacing: "0.02em",
-            }}>
-              Members
-            </span>
+            {/* Members card */}
+            <div className="hero-members-card">
+              <span
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 900,
+                  fontSize: 20,
+                  color: "#C6F03C",
+                  lineHeight: 1,
+                }}
+              >
+                {memberCount}+
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.70)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                Members
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-    </div>
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        initialMode="signup"
+        returnTo="/sessions"
+      />
+    </>
   );
 }
+

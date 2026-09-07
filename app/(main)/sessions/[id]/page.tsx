@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { sql, type RsvpStatus, type Session } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { RsvpButtons } from "@/components/RsvpButtons";
 import { CourtMeter } from "@/components/ui/CourtMeter";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionComments } from "@/components/SessionComments";
-import type { RsvpStatus, Session } from "@/types/database";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -19,37 +18,77 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   OUT:      { label: "Can't make it", color: "var(--out)" },
 };
 
+interface RsvpWithProfile {
+  user_id: string;
+  status: RsvpStatus;
+  created_at: string;
+  name: string;
+  email: string | null;
+}
+
+interface CommentWithAuthor {
+  id: string;
+  body: string;
+  created_at: string;
+  name: string;
+}
+
 export default async function SessionDetailPage({ params }: Props) {
   const { id } = await params;
   const userId = await getCurrentUserId();
-  const supabase = await createClient();
 
-  const { data: session } = await supabase.from("sessions").select("*").eq("id", id).single();
-  if (!session) notFound();
-  const s = session as Session;
+  const sessionRows = await sql`
+    SELECT *
+    FROM sessions
+    WHERE id = ${id}
+    LIMIT 1;
+  `;
 
-  const { data: rsvps } = await supabase
-    .from("rsvps")
-    .select("user_id, status, created_at, profiles(name, email)")
-    .eq("session_id", id)
-    .order("created_at", { ascending: true });
+  if (!sessionRows || sessionRows.length === 0) notFound();
+  const s = sessionRows[0] as Session;
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", userId!).single();
+  const rsvpRows = (await sql`
+    SELECT 
+      r.user_id,
+      r.status,
+      r.created_at,
+      p.name,
+      p.email
+    FROM rsvps r
+    JOIN profiles p ON r.user_id = p.id
+    WHERE r.session_id = ${id}
+    ORDER BY r.created_at ASC;
+  `) as RsvpWithProfile[];
 
-  const { data: comments } = await supabase
-    .from("session_comments")
-    .select("id, body, created_at, author:profiles(name)")
-    .eq("session_id", id)
-    .order("created_at", { ascending: true });
+  const profileRows = userId
+    ? await sql`
+        SELECT role
+        FROM profiles
+        WHERE id = ${userId}
+        LIMIT 1;
+      `
+    : [];
 
-  const myRsvp = rsvps?.find((r) => r.user_id === userId);
-  const myStatus = (myRsvp?.status as RsvpStatus) ?? null;
+  const commentRows = (await sql`
+    SELECT 
+      c.id,
+      c.body,
+      c.created_at,
+      p.name
+    FROM session_comments c
+    JOIN profiles p ON c.author_id = p.id
+    WHERE c.session_id = ${id}
+    ORDER BY c.created_at ASC;
+  `) as CommentWithAuthor[];
+
+  const myRsvp = rsvpRows.find((r) => r.user_id === userId);
+  const myStatus = myRsvp?.status ?? null;
 
   const grouped = {
-    IN:       rsvps?.filter((r) => r.status === "IN") ?? [],
-    WAITLIST: rsvps?.filter((r) => r.status === "WAITLIST") ?? [],
-    MAYBE:    rsvps?.filter((r) => r.status === "MAYBE") ?? [],
-    OUT:      rsvps?.filter((r) => r.status === "OUT") ?? [],
+    IN:       rsvpRows.filter((r) => r.status === "IN"),
+    WAITLIST: rsvpRows.filter((r) => r.status === "WAITLIST"),
+    MAYBE:    rsvpRows.filter((r) => r.status === "MAYBE"),
+    OUT:      rsvpRows.filter((r) => r.status === "OUT"),
   };
 
   const inCount = grouped.IN.length;
@@ -65,7 +104,7 @@ export default async function SessionDetailPage({ params }: Props) {
   const fullDate = date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
   const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz });
 
-  const isAdmin = profile?.role === "ADMIN";
+  const isAdmin = profileRows[0]?.role === "ADMIN";
 
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)", paddingBottom: 140 }}>
@@ -199,7 +238,7 @@ export default async function SessionDetailPage({ params }: Props) {
                 <div style={{ borderTop: "1px solid var(--line)" }}>
                   {players.map((p, i) => {
                     const isYou = p.user_id === userId;
-                    const pName = (p.profiles as { name: string } | null)?.name ?? "Unknown";
+                    const pName = p.name ?? "Unknown";
                     return (
                       <div key={p.user_id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "7px 0" }}>
                         {grp === "WAITLIST" && (
@@ -239,18 +278,18 @@ export default async function SessionDetailPage({ params }: Props) {
         {/* Admin notes / comments */}
         <SessionComments
           sessionId={id}
-          comments={(comments ?? []).map((c) => ({
+          comments={commentRows.map((c) => ({
             id: c.id,
             body: c.body,
             created_at: c.created_at,
-            author: Array.isArray(c.author) ? c.author[0] ?? null : c.author ?? null,
+            author: { name: c.name },
           }))}
           isAdmin={isAdmin}
           currentUserId={userId!}
         />
       </div>
 
-      <RsvpButtons sessionId={id} currentStatus={myStatus} isFull={isFull} />
+      <RsvpButtons sessionId={id} currentStatus={myStatus} isFull={isFull} isAuthenticated={!!userId} />
     </div>
   );
 }
