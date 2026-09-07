@@ -4,15 +4,20 @@ type NeonClient = NeonQueryFunction<false, false>;
 
 let _sqlInstance: NeonClient | null = null;
 
+export function isDatabaseConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED);
+}
+
 function getSql(): NeonClient {
   if (!_sqlInstance) {
-    const url = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED;
-    if (!url) {
+    const rawUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED;
+    if (!rawUrl) {
       const msg = "[DB] DATABASE_URL is not set in environment variables! Please configure DATABASE_URL in your deployment platform (e.g. Railway -> Service -> Variables).";
       console.error(msg);
       throw new Error(msg);
     }
-    _sqlInstance = neon(url);
+    const cleanUrl = rawUrl.trim().replace(/^["']|["']$/g, "");
+    _sqlInstance = neon(cleanUrl);
   }
   return _sqlInstance;
 }

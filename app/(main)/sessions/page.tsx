@@ -4,45 +4,161 @@ import { getCurrentUserId } from "@/lib/auth";
 import { SessionCard } from "@/components/SessionCard";
 import { HeroBanner } from "@/components/HeroBanner";
 
+export const dynamic = "force-dynamic";
+
 export default async function SessionsPage() {
-  const userId = await getCurrentUserId();
+  let userId: string | null = null;
+  let sessions: Session[] = [];
+  let profile: Pick<Profile, "name" | "role"> | undefined;
+  let inRsvps: { session_id: string }[] = [];
+  let myRsvps: { session_id: string; status: RsvpStatus }[] = [];
+  let memberCount = 0;
+  let dbError: string | null = null;
 
-  const sessions = (await sql`
-    SELECT *
-    FROM sessions
-    WHERE status = 'UPCOMING'
-    ORDER BY date ASC;
-  `) as Session[];
+  try {
+    userId = await getCurrentUserId();
 
-  const profileRows = userId
-    ? ((await sql`
-        SELECT name, role
-        FROM profiles
-        WHERE id = ${userId}
-        LIMIT 1;
-      `) as Pick<Profile, "name" | "role">[])
-    : [];
-  const profile = profileRows[0];
+    sessions = (await sql`
+      SELECT *
+      FROM sessions
+      WHERE status = 'UPCOMING'
+      ORDER BY date ASC;
+    `) as Session[];
 
-  const inRsvps = (await sql`
-    SELECT session_id
-    FROM rsvps
-    WHERE status = 'IN';
-  `) as { session_id: string }[];
+    const profileRows = userId
+      ? ((await sql`
+          SELECT name, role
+          FROM profiles
+          WHERE id = ${userId}
+          LIMIT 1;
+        `) as Pick<Profile, "name" | "role">[])
+      : [];
+    profile = profileRows[0];
 
-  const myRsvps = userId
-    ? ((await sql`
-        SELECT session_id, status
-        FROM rsvps
-        WHERE user_id = ${userId};
-      `) as { session_id: string; status: RsvpStatus }[])
-    : [];
+    inRsvps = (await sql`
+      SELECT session_id
+      FROM rsvps
+      WHERE status = 'IN';
+    `) as { session_id: string }[];
 
-  const countRows = (await sql`
-    SELECT COUNT(*)::int AS count
-    FROM profiles;
-  `) as { count: number }[];
-  const memberCount = countRows[0]?.count ?? 0;
+    myRsvps = userId
+      ? ((await sql`
+          SELECT session_id, status
+          FROM rsvps
+          WHERE user_id = ${userId};
+        `) as { session_id: string; status: RsvpStatus }[])
+      : [];
+
+    const countRows = (await sql`
+      SELECT COUNT(*)::int AS count
+      FROM profiles;
+    `) as { count: number }[];
+    memberCount = countRows[0]?.count ?? 0;
+  } catch (err: any) {
+    if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {
+      throw err;
+    }
+    console.error("[SessionsPage] Database error:", err);
+    dbError = err?.message || "Failed to connect to database";
+  }
+
+  if (dbError) {
+    return (
+      <div style={{ minHeight: "100%", background: "var(--bg)", padding: "40px 20px" }}>
+        <div
+          style={{
+            maxWidth: 540,
+            margin: "0 auto",
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: 16,
+            padding: 32,
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ fontSize: 32, marginBottom: 12, textAlign: "center" }}>⚠️</div>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              textAlign: "center",
+              marginBottom: 8,
+              color: "var(--ink)",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Database Setup Required
+          </h2>
+          <p
+            style={{
+              fontSize: 14,
+              color: "var(--muted)",
+              lineHeight: 1.6,
+              marginBottom: 20,
+              textAlign: "center",
+            }}
+          >
+            The website is deployed, but cannot communicate with the database.
+          </p>
+
+          <div
+            style={{
+              padding: "12px 16px",
+              background: "rgba(239, 68, 68, 0.08)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              borderRadius: 10,
+              fontSize: 13,
+              fontFamily: "monospace",
+              color: "#ef4444",
+              marginBottom: 24,
+              wordBreak: "break-word",
+            }}
+          >
+            {dbError}
+          </div>
+
+          <div
+            style={{
+              background: "var(--bg)",
+              border: "1px solid var(--line)",
+              borderRadius: 10,
+              padding: "16px",
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: "var(--ink)",
+              marginBottom: 24,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Next Steps in Railway:</div>
+            <ol style={{ paddingLeft: 20, margin: 0 }}>
+              <li>Open your project on <strong>Railway</strong>.</li>
+              <li>Go to <strong>Variables</strong> tab.</li>
+              <li>Ensure <code>DATABASE_URL</code> is added with your Neon connection string.</li>
+              <li>Save and redeploy.</li>
+            </ol>
+          </div>
+
+          <div style={{ textAlign: "center" }}>
+            <Link
+              href="/setup"
+              style={{
+                display: "inline-block",
+                padding: "10px 24px",
+                background: "var(--accent)",
+                color: "#fff",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: 14,
+              }}
+            >
+              Open Setup Wizard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const inCountBySession = (inRsvps ?? []).reduce<Record<string, number>>(
     (acc, r) => ({ ...acc, [r.session_id]: (acc[r.session_id] ?? 0) + 1 }),
