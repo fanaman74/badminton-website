@@ -76,110 +76,132 @@ export function SessionCard({ session, inCount, userStatus, isHero, isAdmin }: P
     })();
 
     return (
-      <Link href={`/sessions/${session.id}`} style={{ textDecoration: "none", display: "block" }}>
-        <div style={{
-          background: "var(--surface)", borderRadius: "var(--r-lg)",
-          border: "1px solid var(--line)", overflow: "hidden",
-          boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
-        }}>
-          <div style={{ background: "var(--ink)", padding: "16px 18px 15px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
-                  letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 7 }}>
-                  Next up · {when}
-                </div>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 23,
-                  color: "var(--bg)", letterSpacing: "-0.01em" }}>{session.location_name}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5,
-                  color: "rgba(241,239,230,0.65)", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13 }}>
-                  <ClockIcon size={14} />{time}
-                </div>
+      <div style={{
+        position: "relative",
+        background: "var(--surface)",
+        borderRadius: "var(--r-lg)",
+        border: "1px solid var(--line)",
+        overflow: "hidden",
+        boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
+        cursor: "pointer",
+      }}>
+        <Link
+          href={`/sessions/${session.id}`}
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+          }}
+          aria-label={`View session at ${session.location_name}`}
+        />
+        <div style={{ background: "var(--ink)", padding: "16px 18px 15px", position: "relative", zIndex: 2, pointerEvents: "none" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
+                letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 7 }}>
+                Next up · {when}
               </div>
-              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                {isAdmin && (
-                  <div style={{ marginBottom: 8 }}>
-                    <DeleteSessionButton sessionId={session.id} compact />
-                  </div>
-                )}
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 34, color: "var(--accent)", lineHeight: 1 }}>{inCount}</div>
-                <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 10.5,
-                  letterSpacing: "0.08em", color: "rgba(241,239,230,0.55)", textTransform: "uppercase" }}>of {cap} in</div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 23,
+                color: "var(--bg)", letterSpacing: "-0.01em" }}>{session.location_name}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5,
+                color: "rgba(241,239,230,0.65)", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13 }}>
+                <ClockIcon size={14} />{time}
               </div>
             </div>
-          </div>
-          <div style={{ padding: "13px 18px 15px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <CourtMeter session={session} confirmedCount={inCount} compact />
-            {statusMeta ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 11px",
-                borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
-                color: statusMeta.color, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5 }}>
-                {statusMeta.label}
-              </span>
-            ) : (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6,
-                color: "var(--brand)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13.5 }}>
-                {full ? "Join waitlist" : "Tap to RSVP"} →
-              </span>
-            )}
+            <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              {isAdmin && (
+                <div style={{ marginBottom: 8, pointerEvents: "auto" }}>
+                  <DeleteSessionButton sessionId={session.id} compact />
+                </div>
+              )}
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 34, color: "var(--accent)", lineHeight: 1 }}>{inCount}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 10.5,
+                letterSpacing: "0.08em", color: "rgba(241,239,230,0.55)", textTransform: "uppercase" }}>of {cap} in</div>
+            </div>
           </div>
         </div>
-      </Link>
+        <div style={{ padding: "13px 18px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 2, pointerEvents: "none" }}>
+          <CourtMeter session={session} confirmedCount={inCount} compact />
+          {statusMeta ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 11px",
+              borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
+              color: statusMeta.color, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5 }}>
+              {statusMeta.label}
+            </span>
+          ) : (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6,
+              color: "var(--brand)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13.5 }}>
+              {full ? "Join waitlist" : "Tap to RSVP"} →
+            </span>
+          )}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Link href={`/sessions/${session.id}`} style={{ textDecoration: "none", display: "block" }}>
-      <div style={{
-        background: "var(--surface)", borderRadius: "var(--r-lg)", padding: 13,
-        border: "1px solid var(--line)",
-        boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
-      }}>
-        <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
-          <DateBlock date={date} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 7 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16.5,
-                  color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {session.location_name}
-                </div>
-                {full && (
-                  <span style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 9.5,
-                    letterSpacing: "0.08em", color: "var(--maybe)",
-                    background: "color-mix(in srgb,var(--maybe) 15%,transparent)",
-                    padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>FULL</span>
-                )}
+    <div style={{
+      position: "relative",
+      background: "var(--surface)",
+      borderRadius: "var(--r-lg)",
+      padding: 13,
+      border: "1px solid var(--line)",
+      boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
+      cursor: "pointer",
+    }}>
+      <Link
+        href={`/sessions/${session.id}`}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+        }}
+        aria-label={`View session at ${session.location_name}`}
+      />
+      <div style={{ display: "flex", gap: 13, alignItems: "center", position: "relative", zIndex: 2, pointerEvents: "none" }}>
+        <DateBlock date={date} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 7 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16.5,
+                color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {session.location_name}
               </div>
-              {isAdmin && (
-                <div style={{ flexShrink: 0 }}>
-                  <DeleteSessionButton sessionId={session.id} compact />
-                </div>
+              {full && (
+                <span style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 9.5,
+                  letterSpacing: "0.08em", color: "var(--maybe)",
+                  background: "color-mix(in srgb,var(--maybe) 15%,transparent)",
+                  padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>FULL</span>
               )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3,
-              color: "var(--muted)", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 12.5 }}>
-              <ClockIcon size={13} />{time}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, gap: 10 }}>
-              <div style={{ flex: 1 }}><FillBar value={inCount} max={cap} /></div>
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 12,
-                color: full ? "var(--maybe)" : "var(--muted)", flexShrink: 0 }}>
-                {inCount}/{cap}
-              </span>
-            </div>
+            {isAdmin && (
+              <div style={{ flexShrink: 0, pointerEvents: "auto" }}>
+                <DeleteSessionButton sessionId={session.id} compact />
+              </div>
+            )}
           </div>
-        </div>
-        {statusMeta && (
-          <div style={{ marginTop: 11, paddingTop: 11, borderTop: "1px solid var(--line)" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 8px",
-              borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
-              color: statusMeta.color, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11 }}>
-              {statusMeta.label}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3,
+            color: "var(--muted)", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 12.5 }}>
+            <ClockIcon size={13} />{time}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, gap: 10 }}>
+            <div style={{ flex: 1 }}><FillBar value={inCount} max={cap} /></div>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 12,
+              color: full ? "var(--maybe)" : "var(--muted)", flexShrink: 0 }}>
+              {inCount}/{cap}
             </span>
           </div>
-        )}
+        </div>
       </div>
-    </Link>
+      {statusMeta && (
+        <div style={{ marginTop: 11, paddingTop: 11, borderTop: "1px solid var(--line)", position: "relative", zIndex: 2, pointerEvents: "none" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 8px",
+            borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
+            color: statusMeta.color, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11 }}>
+            {statusMeta.label}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }

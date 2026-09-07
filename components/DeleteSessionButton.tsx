@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { deleteSessionAction } from "@/lib/actions/sessions";
 
 export function DeleteSessionButton({
@@ -14,22 +14,31 @@ export function DeleteSessionButton({
   compact?: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleDelete(e?: React.MouseEvent) {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setIsDeleting(true);
     setError(null);
+
     const result = await deleteSessionAction(sessionId);
+
     if (result.error) {
       setError(result.error);
       setIsDeleting(false);
     } else {
       setShowConfirm(false);
+      // If we are currently on the detail page of the deleted session, navigate away to /sessions!
       if (redirectUrl) {
         router.push(redirectUrl);
+      } else if (pathname.includes(sessionId)) {
+        router.push("/sessions");
       } else {
         router.refresh();
       }
@@ -39,11 +48,14 @@ export function DeleteSessionButton({
   if (showConfirm) {
     return (
       <div
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.6)",
+          background: "rgba(0,0,0,0.65)",
           zIndex: 100,
           display: "flex",
           alignItems: "center",
@@ -106,6 +118,7 @@ export function DeleteSessionButton({
           <div style={{ display: "flex", gap: 10 }}>
             <button
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setShowConfirm(false);
               }}

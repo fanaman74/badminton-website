@@ -135,7 +135,7 @@ export default async function SessionDetailPage({ params }: Props) {
               alignItems: "center", justifyContent: "center", textDecoration: "none", fontSize: 12,
               fontFamily: "var(--font-body)", fontWeight: 700,
             }}>Edit</Link>
-            <DeleteSessionButton sessionId={id} />
+            <DeleteSessionButton sessionId={id} redirectUrl="/sessions" />
           </div>
         ) : <div style={{ width: 42 }} />}
       </div>
