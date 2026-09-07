@@ -8,7 +8,9 @@ function getSql(): NeonClient {
   if (!_sqlInstance) {
     const url = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED;
     if (!url) {
-      throw new Error("DATABASE_URL is not set in environment variables");
+      const msg = "[DB] DATABASE_URL is not set in environment variables! Please configure DATABASE_URL in your deployment platform (e.g. Railway -> Service -> Variables).";
+      console.error(msg);
+      throw new Error(msg);
     }
     _sqlInstance = neon(url);
   }
