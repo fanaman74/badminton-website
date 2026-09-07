@@ -6,6 +6,9 @@ import { RsvpButtons } from "@/components/RsvpButtons";
 import { CourtMeter } from "@/components/ui/CourtMeter";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionComments } from "@/components/SessionComments";
+import { AdminRemoveRsvpButton } from "@/components/AdminRemoveRsvpButton";
+
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -265,6 +268,13 @@ export default async function SessionDetailPage({ params }: Props) {
                             letterSpacing: "0.05em", color: "var(--maybe)",
                             background: "color-mix(in srgb,var(--maybe) 13%,transparent)",
                             padding: "3px 8px", borderRadius: 6 }}>NEXT UP</span>
+                        )}
+                        {isAdmin && (
+                          <AdminRemoveRsvpButton
+                            sessionId={id}
+                            userId={p.user_id}
+                            playerName={pName}
+                          />
                         )}
                       </div>
                     );

@@ -125,5 +125,7 @@ export async function deleteSessionAction(
   `;
 
   revalidatePath("/sessions");
+  revalidatePath("/history");
+  revalidatePath(`/sessions/${sessionId}`);
   return { success: true };
 }

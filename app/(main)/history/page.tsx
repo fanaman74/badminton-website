@@ -1,6 +1,9 @@
 import { sql } from "@/lib/db";
-import { getCurrentUserId } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { DeleteSessionButton } from "@/components/DeleteSessionButton";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 
 interface PastSession {
   id: string;
@@ -25,7 +28,9 @@ interface DbPastSessionRow {
 }
 
 export default async function HistoryPage() {
-  const userId = await getCurrentUserId();
+  const user = await getCurrentUser();
+  const isAdmin = user?.role === "ADMIN";
+  const userId = user?.id ?? null;
 
   // Fetch completed/past sessions with user's RSVP status and IN count
   const rows = userId
@@ -228,12 +233,15 @@ export default async function HistoryPage() {
                         marginBottom: 10,
                       }}
                     >
-                      <div>
+                      <Link
+                        href={`/sessions/${session.id}`}
+                        style={{ textDecoration: "none", color: "inherit" }}
+                      >
                         <div
                           style={{
                             fontFamily: "var(--font-body)",
                             fontWeight: 700,
-                            fontSize: 13,
+                            fontSize: 14,
                             color: "var(--ink)",
                           }}
                         >
@@ -249,10 +257,10 @@ export default async function HistoryPage() {
                         >
                           {timeStr}
                         </div>
-                      </div>
+                      </Link>
 
-                      {/* RSVP or attendee badge */}
-                      <div style={{ marginLeft: "auto" }}>
+                      {/* RSVP or attendee badge & Delete button for admins */}
+                      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
                         <span
                           style={{
                             display: "inline-block",
@@ -267,6 +275,10 @@ export default async function HistoryPage() {
                         >
                           {rsvpLabel}
                         </span>
+
+                        {isAdmin && (
+                          <DeleteSessionButton sessionId={session.id} compact />
+                        )}
                       </div>
                     </div>
 

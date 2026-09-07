@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentUserId, getCurrentUser } from "@/lib/auth";
 import { sendRsvpConfirmationEmail } from "@/lib/email";
 import type { RsvpStatus } from "@/types/database";
 
@@ -138,4 +138,50 @@ export async function updateRsvp(
   }
 
   return { status: finalStatus };
+}
+
+export async function adminRemoveRsvpAction(
+  sessionId: string,
+  targetUserId: string
+): Promise<{ error?: string; success?: boolean }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") {
+    return { error: "Not authorized" };
+  }
+
+  const rsvpRows = await sql`
+    SELECT status FROM rsvps
+    WHERE session_id = ${sessionId} AND user_id = ${targetUserId}
+    LIMIT 1;
+  `;
+
+  const prevStatus = rsvpRows[0]?.status;
+
+  await sql`
+    DELETE FROM rsvps
+    WHERE session_id = ${sessionId} AND user_id = ${targetUserId};
+  `;
+
+  if (prevStatus === "IN") {
+    const waitlistRows = await sql`
+      SELECT user_id
+      FROM rsvps
+      WHERE session_id = ${sessionId} AND status = 'WAITLIST'
+      ORDER BY created_at ASC
+      LIMIT 1;
+    `;
+
+    if (waitlistRows.length > 0) {
+      await sql`
+        UPDATE rsvps
+        SET status = 'IN'
+        WHERE session_id = ${sessionId} AND user_id = ${waitlistRows[0].user_id};
+      `;
+    }
+  }
+
+  revalidatePath("/sessions");
+  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/history");
+  return { success: true };
 }
