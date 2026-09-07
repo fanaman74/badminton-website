@@ -3,6 +3,40 @@
 import { useState } from "react";
 import { AuthModal } from "@/components/AuthModal";
 
+function ShuttlecockIcon({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg
+      width={32}
+      height={32}
+      viewBox="0 0 64 64"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        transform: flip ? "scaleX(-1) rotate(12deg)" : "rotate(-12deg)",
+        opacity: 0.95,
+        flexShrink: 0,
+        color: "#C6F03C",
+      }}
+      aria-hidden="true"
+    >
+      {/* Cork base */}
+      <path d="M24 48 C24 58, 40 58, 40 48 Z" fill="currentColor" opacity={0.25} />
+      <path d="M24 48 C24 58, 40 58, 40 48 Z" stroke="#C6F03C" />
+      {/* Feathers */}
+      <path d="M26 48 L14 16" stroke="#FFFFFF" />
+      <path d="M30 48 L25 12" stroke="#FFFFFF" />
+      <path d="M34 48 L39 12" stroke="#FFFFFF" />
+      <path d="M38 48 L50 16" stroke="#FFFFFF" />
+      {/* Feather bands */}
+      <path d="M19 25 Q32 30 45 25" stroke="#00E5FF" />
+      <path d="M22 37 Q32 42 42 37" stroke="#00E5FF" />
+    </svg>
+  );
+}
+
 export function HeroBanner({
   name,
   memberCount = 0,
@@ -21,42 +55,40 @@ export function HeroBanner({
           .hero-panel-responsive {
             position: relative;
             overflow: hidden;
-            height: 65vh;
+            min-height: 640px;
           }
           @media (min-width: 768px) {
             .hero-panel-responsive {
-              height: 100vh;
+              min-height: 820px;
             }
           }
           .hero-text-block {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+            position: relative;
             z-index: 2;
-            padding: 32px 24px;
+            padding: 32px 20px 44px;
             width: 100%;
             box-sizing: border-box;
           }
           @media (min-width: 768px) {
             .hero-text-block {
-              padding: 48px 80px;
-              max-width: 60%;
+              padding: 56px 64px 64px;
+              max-width: 660px;
             }
           }
           @media (min-width: 1200px) {
             .hero-text-block {
-              padding: 48px 140px;
-              max-width: 50%;
+              padding: 64px 96px 72px;
+              max-width: 720px;
             }
           }
           .hero-eyebrow {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             font-family: var(--font-body);
             font-weight: 700;
-            font-size: 10px;
+            font-size: 11px;
             letter-spacing: 0.18em;
             text-transform: uppercase;
             color: #C6F03C;
@@ -64,21 +96,21 @@ export function HeroBanner({
           @media (min-width: 768px) {
             .hero-eyebrow {
               font-size: 13px;
-              margin-bottom: 20px;
+              margin-bottom: 16px;
             }
           }
           .hero-title-main {
-            font-size: 56px;
+            font-size: 46px;
           }
           .hero-title-sub {
-            font-size: 46px;
+            font-size: 38px;
           }
           @media (min-width: 768px) {
             .hero-title-main {
-              font-size: 88px;
+              font-size: 72px;
             }
             .hero-title-sub {
-              font-size: 72px;
+              font-size: 60px;
             }
           }
           .hero-squiggle {
@@ -88,23 +120,23 @@ export function HeroBanner({
           }
           @media (min-width: 768px) {
             .hero-squiggle {
-              width: 280px;
-              height: 16px;
-              margin-top: 14px;
+              width: 260px;
+              height: 14px;
+              margin-top: 12px;
             }
           }
           .hero-subtitle {
-            margin-top: 14px;
+            margin-top: 12px;
             font-family: var(--font-body);
             font-weight: 400;
             font-size: 14px;
-            color: rgba(255,255,255,0.55);
+            color: rgba(255,255,255,0.65);
             line-height: 1.5;
           }
           @media (min-width: 768px) {
             .hero-subtitle {
-              font-size: 18px;
-              margin-top: 24px;
+              font-size: 16px;
+              margin-top: 16px;
               max-width: 480px;
             }
           }
@@ -112,7 +144,7 @@ export function HeroBanner({
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-top: 18px;
+            margin-top: 16px;
             padding: 6px 14px;
             border-radius: 999px;
             border: 1px solid rgba(198,240,60,0.3);
@@ -120,20 +152,20 @@ export function HeroBanner({
             font-family: var(--font-body);
             font-weight: 700;
             font-size: 12px;
-            color: rgba(255,255,255,0.75);
+            color: rgba(255,255,255,0.85);
           }
           @media (min-width: 768px) {
             .hero-chip {
-              font-size: 15px;
-              margin-top: 28px;
-              padding: 8px 18px;
+              font-size: 14px;
+              margin-top: 20px;
+              padding: 8px 16px;
             }
           }
           .hero-cta-btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-top: 16px;
+            margin-top: 12px;
             padding: 10px 22px;
             border-radius: 999px;
             border: none;
@@ -155,7 +187,7 @@ export function HeroBanner({
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 12px;
+            margin-top: 14px;
             width: fit-content;
             padding: 10px 16px;
             border-radius: 10px;
@@ -166,9 +198,97 @@ export function HeroBanner({
           }
           @media (min-width: 768px) {
             .hero-members-card {
-              margin-top: 24px;
+              margin-top: 18px;
               padding: 12px 20px;
             }
+          }
+
+          /* ── Poster Info Card ── */
+          .hero-poster-card {
+            margin-top: 22px;
+            background: rgba(6, 12, 28, 0.78);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 18px;
+            padding: 20px 22px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(0, 229, 255, 0.12);
+            max-width: 520px;
+          }
+          @media (min-width: 768px) {
+            .hero-poster-card {
+              margin-top: 26px;
+              padding: 24px 28px;
+            }
+          }
+          .hero-poster-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+            margin-bottom: 14px;
+          }
+          .hero-poster-title {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+            color: #FFFFFF;
+            text-align: center;
+            flex: 1;
+          }
+          @media (min-width: 768px) {
+            .hero-poster-title {
+              font-size: 23px;
+            }
+          }
+          .hero-poster-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+          }
+          .hero-poster-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 15px;
+            color: #00E5FF;
+            letter-spacing: -0.01em;
+          }
+          @media (min-width: 768px) {
+            .hero-poster-row {
+              font-size: 17px;
+            }
+          }
+          .hero-poster-tagline {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 13.5px;
+            color: #C6F03C;
+            margin-top: 12px;
+            line-height: 1.4;
+          }
+          .hero-poster-contact {
+            margin-top: 8px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.5;
+          }
+          .hero-poster-contact a {
+            color: #FFFFFF;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            transition: color 0.15s ease;
+          }
+          .hero-poster-contact a:hover {
+            color: #00E5FF;
           }
         `}</style>
 
@@ -198,7 +318,7 @@ export function HeroBanner({
               inset: 0,
               pointerEvents: "none",
               background:
-                "linear-gradient(100deg, rgba(4,8,20,0.92) 0%, rgba(4,8,20,0.75) 40%, rgba(4,8,20,0.25) 70%, rgba(4,8,20,0.10) 100%)",
+                "linear-gradient(100deg, rgba(4,8,20,0.94) 0%, rgba(4,8,20,0.82) 45%, rgba(4,8,20,0.35) 75%, rgba(4,8,20,0.15) 100%)",
             }}
           />
 
@@ -263,9 +383,47 @@ export function HeroBanner({
               A community of passion, dedication and love for badminton.
             </div>
 
+            {/* ── Poster schedule & invitation card ── */}
+            <div className="hero-poster-card">
+              <div className="hero-poster-header">
+                <ShuttlecockIcon />
+                <h3 className="hero-poster-title">Come and play badminton!</h3>
+                <ShuttlecockIcon flip />
+              </div>
+
+              <div className="hero-poster-items">
+                <div className="hero-poster-row">
+                  <span>🏟️</span>
+                  <span>Three courts at the VUB</span>
+                </div>
+                <div className="hero-poster-row">
+                  <span>⏰</span>
+                  <span>Every Thursday 19:00 – 20:00</span>
+                </div>
+                <div className="hero-poster-row">
+                  <span>📅</span>
+                  <span>
+                    10<sup>th</sup> Sept 2026 to 24<sup>th</sup> June 2027
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: 12 }}>
+                <div className="hero-poster-tagline">
+                  All abilities welcome for a bit of fitness and fun
+                </div>
+                <div className="hero-poster-contact">
+                  If interested please contact{" "}
+                  <a href="mailto:marika.vernon@yahoo.co.uk">
+                    marika.vernon@yahoo.co.uk
+                  </a>
+                </div>
+              </div>
+            </div>
+
             {/* Personalized chip or Join CTA */}
             {isGuest || name === "Player" ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
                 <div className="hero-chip">
                   👋 Welcome to the club!
                 </div>
@@ -320,4 +478,3 @@ export function HeroBanner({
     </>
   );
 }
-
