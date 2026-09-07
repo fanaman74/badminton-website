@@ -423,19 +423,14 @@ export function HeroBanner({
 
             {/* Personalized chip or Join CTA */}
             {isGuest || name === "Player" ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
-                <div className="hero-chip">
-                  👋 Welcome to the club!
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAuthOpen(true)}
-                  className="hero-cta-btn"
-                >
-                  <span>🏸 Join Team / Sign In</span>
-                  <span>→</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setAuthOpen(true)}
+                className="hero-cta-btn"
+              >
+                <span>🏸 Join Team / Sign In</span>
+                <span>→</span>
+              </button>
             ) : (
               <div className="hero-chip">👋 Hey, {name.split(" ")[0]}!</div>
             )}
