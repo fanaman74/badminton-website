@@ -20,8 +20,8 @@ export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated 
   const activeKey = status === "WAITLIST" ? "IN" : status;
 
   const inLabel = status === "IN"
-    ? "Accepted ✓"
-    : (isFull && status !== "WAITLIST" ? "Accept (Waitlist)" : "Accept");
+    ? "Added ✓"
+    : (isFull && status !== "WAITLIST" ? "Add Me (Waitlist)" : "Add Me");
 
   const opts = [
     { key: "IN" as const,    label: inLabel, color: "var(--in)" },
@@ -85,7 +85,7 @@ export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated 
               transition: "all .18s ease",
             }}
           >
-            <span>🏸 Sign In to Accept Date</span>
+            <span>🏸 Sign In to Add Me</span>
             <span>→</span>
           </button>
         ) : (

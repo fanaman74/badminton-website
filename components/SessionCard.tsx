@@ -18,7 +18,7 @@ interface Props {
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  IN:       { label: "Accepted ✓",  color: "var(--in)" },
+  IN:       { label: "Added ✓",    color: "var(--in)" },
   WAITLIST: { label: "Waitlisted", color: "var(--maybe)" },
   MAYBE:    { label: "Maybe",      color: "var(--maybe)" },
   OUT:      { label: "Not going",  color: "var(--out)" },
@@ -165,7 +165,7 @@ export function SessionCard({
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px",
                 borderRadius: 999, background: "color-mix(in srgb, var(--in) 16%, transparent)",
                 color: "var(--in)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13 }}>
-                Accepted ✓
+                Added ✓
               </span>
             ) : (
               <button
@@ -191,7 +191,7 @@ export function SessionCard({
                   opacity: isPending ? 0.7 : 1,
                 }}
               >
-                <span>{isPending ? "Adding..." : (full ? "Waitlist" : "Accept ✓")}</span>
+                <span>{isPending ? "Adding..." : (full ? "Waitlist" : "Add Me")}</span>
               </button>
             )}
           </div>
@@ -298,7 +298,7 @@ export function SessionCard({
                 opacity: isPending ? 0.7 : 1,
               }}
             >
-              <span>{isPending ? "Adding..." : (full ? "Waitlist" : "Accept ✓")}</span>
+              <span>{isPending ? "Adding..." : (full ? "Waitlist" : "Add Me")}</span>
             </button>
           ) : (
             <span style={{ fontSize: 12, fontFamily: "var(--font-body)", fontWeight: 700, color: "var(--faint)" }}>

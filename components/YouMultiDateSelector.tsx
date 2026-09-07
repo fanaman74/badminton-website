@@ -212,7 +212,7 @@ export function YouMultiDateSelector({
             margin: "5px 0 0",
             lineHeight: 1.45,
           }}>
-            Check multiple dates below and tap <strong>Accept</strong> to add yourself to all of them at once.
+            Check multiple dates below and tap <strong>Add Me</strong> to add yourself to all of them at once.
           </p>
         </div>
       </div>
@@ -519,7 +519,7 @@ export function YouMultiDateSelector({
                       fontSize: 11,
                       fontWeight: 800,
                     }}>
-                      Accepted ✓
+                      Added ✓
                     </span>
                     <button
                       type="button"
@@ -619,10 +619,10 @@ export function YouMultiDateSelector({
           <span>🏸</span>
           <span>
             {isPending
-              ? "Accepting playing dates..."
+              ? "Adding me to dates..."
               : (selectedIds.size === 0
-                ? "Select dates above to Accept"
-                : `Accept ${selectedIds.size} Selected Date${selectedIds.size > 1 ? "s" : ""}`)}
+                ? "Select dates above to Add Me"
+                : `Add Me to ${selectedIds.size} Selected Date${selectedIds.size > 1 ? "s" : ""}`)}
           </span>
           {selectedIds.size > 0 && <span>→</span>}
         </button>

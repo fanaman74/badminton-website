@@ -314,7 +314,7 @@ export async function sendBatchRsvpConfirmationEmail({
             <span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${
               isWait ? "#E08A1E" : "#1FA463"
             };color:#fff;">
-              ${isWait ? "Waitlist" : "Accepted"}
+              ${isWait ? "Waitlist" : "Added"}
             </span>
           </td>
         </tr>`;
@@ -342,7 +342,7 @@ export async function sendBatchRsvpConfirmationEmail({
           <td style="padding:24px 28px;">
             <p style="margin:0 0 20px;font-size:15px;color:#4A4535;line-height:1.6;">
               Hey ${firstName},<br><br>
-              You have successfully accepted and joined the following badminton sessions:
+              You have successfully added yourself to the following badminton sessions:
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8F6EF;border-radius:14px;border:1px solid #E9E5D8;overflow:hidden;margin-bottom:20px;">
               ${rowsHtml}
