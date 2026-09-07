@@ -20,6 +20,7 @@ export function TopNav({ user }: Props) {
     { href: "/history",  label: "History"  },
     { href: "/team",     label: "Team"     },
     ...(user ? [{ href: "/you", label: "You" }] : []),
+    ...(user?.role === "ADMIN" ? [{ href: "/admin/sessions/new", label: "⚙️ Admin" }] : []),
   ];
 
   return (

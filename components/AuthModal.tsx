@@ -161,15 +161,38 @@ export function AuthModal({ isOpen, onClose, returnTo = "/sessions", initialMode
           )}
 
           <div>
-            <label htmlFor="email" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5, color: "var(--ink)", marginBottom: 4 }}>
-              Personal Email
+            <label htmlFor="modal-email" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5, color: "var(--ink)", marginBottom: 4 }}>
+              Email Address
             </label>
             <input
-              id="email"
+              id="modal-email"
               name="email"
               type="email"
               required
-              placeholder="you@gmail.com"
+              placeholder="you@domain.com"
+              disabled={isPending}
+              style={{
+                width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
+                padding: "10px 12px", fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 14,
+                color: "var(--ink)", background: "var(--surface-2)", outline: "none",
+              }}
+            />
+          </div>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <label htmlFor="modal-password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5, color: "var(--ink)" }}>
+                Password
+              </label>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--faint)" }}>
+                Required for Admins
+              </span>
+            </div>
+            <input
+              id="modal-password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
               disabled={isPending}
               style={{
                 width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",

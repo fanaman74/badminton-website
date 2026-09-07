@@ -18,6 +18,8 @@ if (!databaseUrl) {
 const sql = neon(databaseUrl);
 
 const players = [
+  { name: "Fred", email: "fredanaman@gmail.com", role: "ADMIN" },
+  { name: "Marika Vernon", email: "marika.vernon@yahoo.co.uk", role: "ADMIN" },
   { name: "Admin Alex", email: "alex@example.com", role: "ADMIN" },
   { name: "Ben Tan", email: "ben@example.com", role: "PLAYER" },
   { name: "Clara Lim", email: "clara@example.com", role: "PLAYER" },

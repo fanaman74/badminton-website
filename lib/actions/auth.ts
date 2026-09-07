@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { generateSessionToken } from "@/lib/auth";
 
-
 const SESSION_COOKIE_NAME = "badminton_session";
 
+// Designated admin accounts and credentials
+const ADMIN_ACCOUNTS: Record<string, { name: string; password: string }> = {
+  "fredanaman@gmail.com": { name: "Fred", password: "Badminton26" },
+  "marika.vernon@yahoo.co.uk": { name: "Marika Vernon", password: "Badminton26" },
+};
 
 export async function createSessionForUser(userId: string, returnTo: string = "/sessions") {
   const sessionToken = generateSessionToken();
@@ -34,6 +38,7 @@ export async function emailAuthAction(
   formData: FormData
 ): Promise<{ error?: string; success?: boolean } | undefined> {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const password = (formData.get("password") as string)?.trim();
   const name = (formData.get("name") as string)?.trim();
   const returnTo = (formData.get("returnTo") as string) || "/sessions";
 
@@ -41,9 +46,18 @@ export async function emailAuthAction(
     return { error: "Please enter a valid email address." };
   }
 
+  const adminConfig = ADMIN_ACCOUNTS[email];
+
+  // If this email belongs to an admin account, verify password
+  if (adminConfig) {
+    if (!password || password !== adminConfig.password) {
+      return { error: "Incorrect password for admin account. Please enter the admin password." };
+    }
+  }
+
   // Check if user already exists
   const existingRows = await sql`
-    SELECT id, name
+    SELECT id, name, role
     FROM profiles 
     WHERE LOWER(email) = ${email} 
     LIMIT 1;
@@ -53,13 +67,26 @@ export async function emailAuthAction(
 
   if (existingRows && existingRows.length > 0) {
     userId = existingRows[0].id as string;
+    // Upgrade or confirm admin role if applicable
+    if (adminConfig && existingRows[0].role !== "ADMIN") {
+      await sql`
+        UPDATE profiles
+        SET role = 'ADMIN', name = COALESCE(NULLIF(name, ''), ${adminConfig.name})
+        WHERE id = ${userId};
+      `;
+    }
   } else {
-    // New joiner registration
-    const playerName = name || email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    
+    // New registration
+    const playerName =
+      name ||
+      (adminConfig
+        ? adminConfig.name
+        : email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
+    const role = adminConfig ? "ADMIN" : "PLAYER";
+
     const insertRows = await sql`
       INSERT INTO profiles (name, email, role)
-      VALUES (${playerName}, ${email}, 'PLAYER')
+      VALUES (${playerName}, ${email}, ${role})
       RETURNING id;
     `;
     userId = insertRows[0]?.id as string;

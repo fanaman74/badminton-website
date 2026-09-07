@@ -79,17 +79,24 @@ export async function GET(
 
     // Match or create profile
     const existing = await sql`
-      SELECT id FROM profiles WHERE LOWER(email) = ${email} LIMIT 1;
+      SELECT id, role FROM profiles WHERE LOWER(email) = ${email} LIMIT 1;
     `;
+
+    const ADMIN_EMAILS = ["fredanaman@gmail.com", "marika.vernon@yahoo.co.uk"];
+    const isAdminEmail = ADMIN_EMAILS.includes(email.toLowerCase());
 
     let userId: string;
     if (existing && existing.length > 0) {
       userId = existing[0].id as string;
+      if (isAdminEmail && existing[0].role !== "ADMIN") {
+        await sql`UPDATE profiles SET role = 'ADMIN' WHERE id = ${userId};`;
+      }
     } else {
       const playerName = name || email.split("@")[0];
+      const role = isAdminEmail ? "ADMIN" : "PLAYER";
       const inserted = await sql`
         INSERT INTO profiles (name, email, role)
-        VALUES (${playerName}, ${email}, 'PLAYER')
+        VALUES (${playerName}, ${email}, ${role})
         RETURNING id;
       `;
       userId = inserted[0]?.id as string;

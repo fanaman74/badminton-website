@@ -8,8 +8,9 @@ function AuthForm() {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/sessions";
   const errorParam = searchParams.get("error");
+  const isAdminTarget = returnTo.includes("/admin");
 
-  const [mode, setMode] = useState<"signup" | "signin">("signup");
+  const [mode, setMode] = useState<"signup" | "signin">(isAdminTarget ? "signin" : "signup");
   const [state, formAction, isPending] = useActionState(emailAuthAction, undefined);
 
   return (
@@ -25,7 +26,11 @@ function AuthForm() {
             color: "var(--ink)", letterSpacing: "-0.02em" }}>VUB Smashers</div>
           <div style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 14,
             color: "var(--muted)", marginTop: 4 }}>
-            {mode === "signup" ? "Join our badminton sessions & community" : "Sign in to manage your RSVPs"}
+            {isAdminTarget
+              ? "Admin Sign In: Set playing dates & courts"
+              : mode === "signup"
+              ? "Join our badminton sessions & community"
+              : "Sign in to manage your RSVPs"}
           </div>
         </div>
 
@@ -110,7 +115,7 @@ function AuthForm() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 16px" }}>
             <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
             <span style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 11.5, color: "var(--faint)", textTransform: "uppercase" }}>
-              or with email
+              or with email & password
             </span>
             <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
           </div>
@@ -142,7 +147,7 @@ function AuthForm() {
 
             <div>
               <label htmlFor="email" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 6 }}>
-                Personal Email
+                Email Address
               </label>
               <input
                 id="email"
@@ -150,7 +155,30 @@ function AuthForm() {
                 type="email"
                 required
                 autoFocus
-                placeholder="you@gmail.com"
+                placeholder="you@domain.com"
+                disabled={isPending}
+                style={{
+                  width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
+                  padding: "11px 13px", fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 14.5,
+                  color: "var(--ink)", background: "var(--surface-2)", outline: "none",
+                }}
+              />
+            </div>
+
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <label htmlFor="password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
+                  Password
+                </label>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--faint)" }}>
+                  Required for Admins
+                </span>
+              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
                 disabled={isPending}
                 style={{
                   width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
@@ -186,6 +214,10 @@ function AuthForm() {
               {isPending ? "Connecting…" : mode === "signup" ? "Join the Team →" : "Sign In →"}
             </button>
           </form>
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+          Admin accounts: <strong>fredanaman@gmail.com</strong> &amp; <strong>marika.vernon@yahoo.co.uk</strong>
         </div>
 
         <p style={{ textAlign: "center", fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--muted)", marginTop: 18 }}>
