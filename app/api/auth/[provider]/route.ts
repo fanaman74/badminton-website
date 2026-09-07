@@ -36,27 +36,5 @@ export async function GET(
     );
   }
 
-  if (provider === "facebook") {
-    const appId = process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID;
-    if (appId) {
-      const fbAuthUrl = new URL("https://www.facebook.com/v19.0/dialog/oauth");
-      fbAuthUrl.searchParams.set("client_id", appId);
-      fbAuthUrl.searchParams.set("redirect_uri", callbackUrl);
-      fbAuthUrl.searchParams.set("response_type", "code");
-      fbAuthUrl.searchParams.set("scope", "email,public_profile");
-      fbAuthUrl.searchParams.set("state", returnTo);
-      return NextResponse.redirect(fbAuthUrl.toString());
-    }
-
-    const errorMsg =
-      "Facebook Sign-In is not configured yet. Please sign in or register with your email address below.";
-    return NextResponse.redirect(
-      new URL(
-        `/auth?error=${encodeURIComponent(errorMsg)}&returnTo=${encodeURIComponent(returnTo)}`,
-        origin
-      )
-    );
-  }
-
   return NextResponse.redirect(new URL(`/auth?error=Unsupported provider ${provider}`, origin));
 }

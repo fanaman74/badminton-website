@@ -117,6 +117,18 @@ async function migrate() {
   `;
   console.log("  ✓ Created session_comments table");
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS email_otps (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email TEXT NOT NULL,
+      code TEXT NOT NULL,
+      name TEXT,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+  console.log("  ✓ Created email_otps table");
+
   // Create indexes for fast lookups
   await sql`CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status);`;
@@ -124,6 +136,7 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS idx_rsvps_user ON rsvps(user_id);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(token);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_session_comments_session ON session_comments(session_id);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_email_otps_email ON email_otps(email);`;
   console.log("  ✓ Created indexes");
 
   console.log("\n✅ Migration completed successfully!");

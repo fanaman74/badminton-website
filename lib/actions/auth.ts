@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { generateSessionToken } from "@/lib/auth";
+import { sendOtpEmail } from "@/lib/email";
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -93,6 +94,106 @@ export async function emailAuthAction(
   }
 
   await createSessionForUser(userId, returnTo);
+}
+
+export async function requestEmailOtpAction(
+  emailInput: string,
+  nameInput?: string
+): Promise<{ success?: boolean; error?: string }> {
+  const email = emailInput?.trim().toLowerCase();
+  const name = nameInput?.trim();
+
+  if (!email || !email.includes("@")) {
+    return { error: "Please enter a valid email address." };
+  }
+
+  // Generate 6-digit random code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Delete previous pending OTPs for this email
+  await sql`DELETE FROM email_otps WHERE LOWER(email) = ${email};`;
+
+  // Insert OTP with 10-minute expiry
+  await sql`
+    INSERT INTO email_otps (email, code, name, expires_at)
+    VALUES (${email}, ${code}, ${name || null}, NOW() + INTERVAL '10 minutes');
+  `;
+
+  // Send email
+  const sendRes = await sendOtpEmail(email, code, name);
+  if (!sendRes.success && sendRes.error) {
+    return { error: `Could not send verification email: ${sendRes.error}` };
+  }
+
+  return { success: true };
+}
+
+export async function verifyEmailOtpAction(
+  emailInput: string,
+  codeInput: string,
+  returnTo: string = "/sessions"
+): Promise<{ success?: boolean; error?: string }> {
+  const email = emailInput?.trim().toLowerCase();
+  const code = codeInput?.trim();
+
+  if (!email || !code) {
+    return { error: "Email and verification code are required." };
+  }
+
+  // Find matching valid OTP
+  const otpRows = await sql`
+    SELECT id, email, code, name
+    FROM email_otps
+    WHERE LOWER(email) = ${email}
+      AND code = ${code}
+      AND expires_at > NOW()
+    ORDER BY created_at DESC
+    LIMIT 1;
+  `;
+
+  if (!otpRows || otpRows.length === 0) {
+    return { error: "Invalid or expired verification code. Please check your email or request a new code." };
+  }
+
+  const savedName = otpRows[0].name as string | null;
+
+  // Delete used OTP
+  await sql`DELETE FROM email_otps WHERE LOWER(email) = ${email};`;
+
+  // Check if profile exists
+  const existingRows = await sql`
+    SELECT id, name, role
+    FROM profiles
+    WHERE LOWER(email) = ${email}
+    LIMIT 1;
+  `;
+
+  const adminConfig = ADMIN_ACCOUNTS[email];
+  let userId: string;
+
+  if (existingRows && existingRows.length > 0) {
+    userId = existingRows[0].id as string;
+    if (adminConfig && existingRows[0].role !== "ADMIN") {
+      await sql`UPDATE profiles SET role = 'ADMIN' WHERE id = ${userId};`;
+    }
+  } else {
+    const playerName =
+      savedName ||
+      (adminConfig
+        ? adminConfig.name
+        : email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
+    const role = adminConfig ? "ADMIN" : "PLAYER";
+
+    const insertRows = await sql`
+      INSERT INTO profiles (name, email, role)
+      VALUES (${playerName}, ${email}, ${role})
+      RETURNING id;
+    `;
+    userId = insertRows[0]?.id as string;
+  }
+
+  await createSessionForUser(userId, returnTo);
+  return { success: true };
 }
 
 export async function signOutAction() {

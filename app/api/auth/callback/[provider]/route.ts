@@ -49,28 +49,6 @@ export async function GET(
         email = "google.user@example.com";
         name = "Google Player";
       }
-    } else if (provider === "facebook") {
-      if (code && (process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID) && process.env.FACEBOOK_CLIENT_SECRET) {
-        const appId = process.env.FACEBOOK_APP_ID || process.env.FACEBOOK_CLIENT_ID!;
-        const appSecret = process.env.FACEBOOK_CLIENT_SECRET!;
-        const tokenRes = await fetch(`https://graph.facebook.com/v19.0/oauth/access_token?` + new URLSearchParams({
-          client_id: appId,
-          client_secret: appSecret,
-          redirect_uri: `${origin}/api/auth/callback/facebook`,
-          code,
-        }));
-        const tokenData = await tokenRes.json();
-
-        if (tokenData.access_token) {
-          const userRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${tokenData.access_token}`);
-          const userData = await userRes.json();
-          email = userData.email?.toLowerCase() || `fb_${userData.id}@facebook.com`;
-          name = userData.name;
-        }
-      } else if (isDemo) {
-        email = "facebook.user@example.com";
-        name = "Facebook Player";
-      }
     }
 
     if (!email) {

@@ -214,3 +214,68 @@ export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise
     console.error("[email] Failed to send RSVP confirmation:", err);
   }
 }
+
+export async function sendOtpEmail(
+  toEmail: string,
+  code: string,
+  toName?: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getResend();
+  const displayName = toName || toEmail.split("@")[0];
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { margin:0; padding:0; background:#060C1C; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color:#FFFFFF; }
+    .container { max-width:480px; margin:0 auto; padding:32px 20px; }
+    .card { background:#0F1A30; border-radius:16px; border:1px solid rgba(198,240,60,0.22); padding:32px 24px; text-align:center; }
+    .logo { font-size:38px; margin-bottom:12px; }
+    .title { font-size:22px; font-weight:800; margin:0 0 8px; color:#FFFFFF; }
+    .sub { font-size:14px; color:#94A3B8; margin:0 0 24px; line-height:1.5; }
+    .code-box { background:#060C1C; border:2px dashed #C6F03C; border-radius:12px; padding:16px 24px; font-size:34px; font-weight:900; letter-spacing:8px; color:#C6F03C; display:inline-block; margin-bottom:24px; font-family:monospace; }
+    .footer { font-size:12px; color:#64748B; margin-top:24px; line-height:1.5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">🏸</div>
+      <h1 class="title">VUB Smashers</h1>
+      <p class="sub">Hello <strong>${displayName}</strong>,<br>Here is your verification code to sign in:</p>
+      <div class="code-box">${code}</div>
+      <p class="sub" style="font-size:13px; margin:0;">This code will expire in <strong>10 minutes</strong>. If you did not request this code, you can safely ignore this email.</p>
+      <div class="footer">
+        🏸 VUB Smashers Badminton Club · Brussels, Belgium
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  if (!client) {
+    console.warn(`[email] RESEND_API_KEY not set — OTP for ${toEmail}: ${code}`);
+    return { success: true };
+  }
+
+  try {
+    const result = await client.emails.send({
+      from: "VUB Smashers <notifications@cordis-explorer.eu>",
+      to: toEmail,
+      subject: `🏸 Your verification code: ${code}`,
+      html,
+    });
+
+    if (result.error) {
+      console.error("[email] Resend error:", result.error);
+      return { success: false, error: result.error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("[email] Failed to send OTP email:", err);
+    return { success: false, error: err?.message || "Failed to send email" };
+  }
+}
+
