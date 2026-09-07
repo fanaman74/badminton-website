@@ -1,7 +1,10 @@
-import { sql, type Profile } from "@/lib/db";
+import { sql, type Profile, type Session, type RsvpStatus } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { signOutAction } from "@/lib/actions/auth";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { YouMultiDateSelector } from "@/components/YouMultiDateSelector";
+
+export const dynamic = "force-dynamic";
 
 export default async function YouPage() {
   const userId = await getCurrentUserId();
@@ -17,6 +20,37 @@ export default async function YouPage() {
 
   const profile = profileRows[0];
 
+  const sessions = (await sql`
+    SELECT *
+    FROM sessions
+    WHERE status = 'UPCOMING'
+    ORDER BY date ASC;
+  `) as Session[];
+
+  const inRsvps = (await sql`
+    SELECT session_id
+    FROM rsvps
+    WHERE status = 'IN';
+  `) as { session_id: string }[];
+
+  const myRsvps = userId
+    ? ((await sql`
+        SELECT session_id, status
+        FROM rsvps
+        WHERE user_id = ${userId};
+      `) as { session_id: string; status: RsvpStatus }[])
+    : [];
+
+  const inCountBySession = inRsvps.reduce<Record<string, number>>(
+    (acc, r) => ({ ...acc, [r.session_id]: (acc[r.session_id] ?? 0) + 1 }),
+    {}
+  );
+
+  const myStatusBySession = myRsvps.reduce<Record<string, RsvpStatus>>(
+    (acc, r) => ({ ...acc, [r.session_id]: r.status }),
+    {}
+  );
+
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
       {/* Header */}
@@ -29,7 +63,15 @@ export default async function YouPage() {
           lineHeight: 1, letterSpacing: "-0.02em", color: "var(--ink)" }}>You</div>
       </div>
 
-      <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 16, paddingBottom: 140 }}>
+      <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 20, paddingBottom: 140 }}>
+        {/* Multi-Date Selector for quick joining & managing playing dates */}
+        <YouMultiDateSelector
+          sessions={sessions}
+          inCountBySession={inCountBySession}
+          myStatusBySession={myStatusBySession}
+        />
+
+        {/* Profile Settings */}
         <ProfileEditForm
           name={profile?.name || ""}
           email={profile?.email || ""}
@@ -37,6 +79,7 @@ export default async function YouPage() {
           isAdmin={profile?.role === "ADMIN"}
         />
 
+        {/* Sign out */}
         <form action={signOutAction}>
           <button type="submit" style={{
             width: "100%", height: 48, borderRadius: "var(--r-md)", border: "none",

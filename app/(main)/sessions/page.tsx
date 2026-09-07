@@ -211,6 +211,7 @@ export default async function SessionsPage() {
         inCountBySession={inCountBySession}
         myStatusBySession={myStatusBySession}
         isAdmin={isAdmin}
+        isAuthenticated={!!userId}
       />
     </div>
   );

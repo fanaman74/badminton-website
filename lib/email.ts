@@ -279,3 +279,113 @@ export async function sendOtpEmail(
   }
 }
 
+export interface BatchSessionItem {
+  date: string;
+  locationName: string;
+  locationMapsUrl?: string | null;
+  status: "IN" | "WAITLIST";
+}
+
+export async function sendBatchRsvpConfirmationEmail({
+  toEmail,
+  toName,
+  sessions,
+}: {
+  toEmail: string;
+  toName: string;
+  sessions: BatchSessionItem[];
+}): Promise<{ success: boolean; error?: string }> {
+  const client = getResend();
+  const firstName = toName.split(" ")[0] || "Player";
+  const count = sessions.length;
+
+  const rowsHtml = sessions
+    .map((s) => {
+      const d = formatDate(s.date);
+      const t = formatTime(s.date);
+      const isWait = s.status === "WAITLIST";
+      return `
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #E9E5D8;font-size:13.5px;color:#17150F;">
+            <strong>${d}</strong><br>
+            <span style="color:#78715E;font-size:12.5px;">⏰ ${t} · 📍 ${s.locationName}</span>
+          </td>
+          <td align="right" style="padding:10px 12px;border-bottom:1px solid #E9E5D8;vertical-align:middle;">
+            <span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${
+              isWait ? "#E08A1E" : "#1FA463"
+            };color:#fff;">
+              ${isWait ? "Waitlist" : "Accepted"}
+            </span>
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F1EFE6;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F1EFE6;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFFF;border-radius:20px;overflow:hidden;border:1px solid #E9E5D8;">
+        <tr>
+          <td style="background:#17150F;padding:24px 28px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#C6F03C;">
+              🏸 VUB Smashers
+            </span><br>
+            <span style="font-size:22px;font-weight:800;color:#F1EFE6;letter-spacing:-0.02em;line-height:1.2;">
+              You're added to ${count} session${count > 1 ? "s" : ""}!
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 28px;">
+            <p style="margin:0 0 20px;font-size:15px;color:#4A4535;line-height:1.6;">
+              Hey ${firstName},<br><br>
+              You have successfully accepted and joined the following badminton sessions:
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8F6EF;border-radius:14px;border:1px solid #E9E5D8;overflow:hidden;margin-bottom:20px;">
+              ${rowsHtml}
+            </table>
+            <p style="margin:0;font-size:13.5px;color:#78715E;line-height:1.5;">
+              You can review or change your responses at any time in the <strong>You</strong> section of the website.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#F8F6EF;padding:16px 28px;border-top:1px solid #E9E5D8;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#A8A18C;">
+              🏸 VUB Smashers Badminton Club · Brussels, Belgium
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  if (!client) {
+    console.warn(`[email] RESEND_API_KEY not set — batch RSVP email for ${toEmail}: ${count} sessions`);
+    return { success: true };
+  }
+
+  try {
+    const result = await client.emails.send({
+      from: "VUB Smashers <notifications@cordis-explorer.eu>",
+      to: toEmail,
+      subject: `🏸 You're confirmed for ${count} playing session${count > 1 ? "s" : ""}!`,
+      html,
+    });
+    if (result.error) {
+      console.error("[email] Batch RSVP Resend error:", result.error);
+      return { success: false, error: result.error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("[email] Failed to send batch RSVP email:", err);
+    return { success: false, error: err?.message || "Failed to send email" };
+  }
+}
+
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateRsvp } from "@/lib/actions/rsvp";
+import { updateRsvp, removeMyRsvpAction } from "@/lib/actions/rsvp";
 import type { RsvpStatus } from "@/types/database";
 import { AuthModal } from "@/components/AuthModal";
 
@@ -19,10 +19,14 @@ export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated 
 
   const activeKey = status === "WAITLIST" ? "IN" : status;
 
+  const inLabel = status === "IN"
+    ? "Accepted ✓"
+    : (isFull && status !== "WAITLIST" ? "Accept (Waitlist)" : "Accept");
+
   const opts = [
-    { key: "IN" as const,    label: isFull && status !== "IN" && status !== "WAITLIST" ? "Waitlist" : "In",    color: "var(--in)" },
+    { key: "IN" as const,    label: inLabel, color: "var(--in)" },
     { key: "MAYBE" as const, label: "Maybe", color: "var(--maybe)" },
-    { key: "OUT" as const,   label: "Out",   color: "var(--out)" },
+    { key: "OUT" as const,   label: "Can't make it",   color: "var(--out)" },
   ];
 
   function handleRsvp(key: "IN" | "MAYBE" | "OUT") {
@@ -33,6 +37,14 @@ export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated 
     startTransition(async () => {
       const result = await updateRsvp(sessionId, key);
       if (result.status) setStatus(result.status);
+    });
+  }
+
+  function handleRemoveEntry() {
+    if (!confirm("Are you sure you want to remove your entry for this session?")) return;
+    startTransition(async () => {
+      const result = await removeMyRsvpAction(sessionId);
+      if (result.success) setStatus(null);
     });
   }
 
@@ -73,11 +85,11 @@ export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated 
               transition: "all .18s ease",
             }}
           >
-            <span>🏸 Sign In / Join to RSVP</span>
+            <span>🏸 Sign In to Accept Date</span>
             <span>→</span>
           </button>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 9 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.45fr 1fr 1fr", gap: 9 }}>
             {opts.map((o) => {
               const on = activeKey === o.key;
               return (
@@ -112,6 +124,30 @@ export function RsvpButtons({ sessionId, currentStatus, isFull, isAuthenticated 
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {status && isAuthenticated && (
+          <div style={{ textAlign: "center", marginTop: 9 }}>
+            <button
+              type="button"
+              onClick={handleRemoveEntry}
+              disabled={isPending}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--out)",
+                fontSize: 12,
+                fontFamily: "var(--font-body)",
+                fontWeight: 700,
+                cursor: isPending ? "not-allowed" : "pointer",
+                padding: "2px 8px",
+                opacity: isPending ? 0.6 : 0.85,
+                transition: "opacity .15s ease",
+              }}
+            >
+              ✕ Remove my entry from this session
+            </button>
           </div>
         )}
       </div>

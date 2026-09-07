@@ -9,6 +9,7 @@ interface SessionsListProps {
   inCountBySession: Record<string, number>;
   myStatusBySession: Record<string, RsvpStatus>;
   isAdmin?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export function SessionsList({
@@ -16,6 +17,7 @@ export function SessionsList({
   inCountBySession,
   myStatusBySession,
   isAdmin,
+  isAuthenticated,
 }: SessionsListProps) {
   const [selectedMonth, setSelectedMonth] = useState<string>("ALL");
 
@@ -202,6 +204,7 @@ export function SessionsList({
             inCount={inCountBySession[heroSession.id] ?? 0}
             userStatus={myStatusBySession[heroSession.id] ?? null}
             isAdmin={isAdmin}
+            isAuthenticated={isAuthenticated}
             isHero
           />
         </div>
@@ -264,6 +267,7 @@ export function SessionsList({
               inCount={inCountBySession[session.id] ?? 0}
               userStatus={myStatusBySession[session.id] ?? null}
               isAdmin={isAdmin}
+              isAuthenticated={isAuthenticated}
             />
           ))}
         </div>
