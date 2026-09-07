@@ -220,6 +220,7 @@ export default async function SessionsPage() {
               session={list[0]}
               inCount={inCountBySession[list[0].id] ?? 0}
               userStatus={myStatusBySession[list[0].id] ?? null}
+              isAdmin={isAdmin}
               isHero
             />
           </div>
@@ -243,6 +244,7 @@ export default async function SessionsPage() {
                 session={session}
                 inCount={inCountBySession[session.id] ?? 0}
                 userStatus={myStatusBySession[session.id] ?? null}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

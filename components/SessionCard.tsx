@@ -3,12 +3,14 @@
 import Link from "next/link";
 import type { Session, RsvpStatus } from "@/types/database";
 import { CourtMeter } from "@/components/ui/CourtMeter";
+import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 
 interface Props {
   session: Session;
   inCount: number;
   userStatus: RsvpStatus | null;
   isHero?: boolean;
+  isAdmin?: boolean;
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
@@ -55,7 +57,7 @@ function ClockIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-export function SessionCard({ session, inCount, userStatus, isHero }: Props) {
+export function SessionCard({ session, inCount, userStatus, isHero, isAdmin }: Props) {
   const date = new Date(session.date);
   const cap = session.max_capacity;
   const full = inCount >= cap;
@@ -94,7 +96,12 @@ export function SessionCard({ session, inCount, userStatus, isHero }: Props) {
                   <ClockIcon size={14} />{time}
                 </div>
               </div>
-              <div style={{ textAlign: "right" }}>
+              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                {isAdmin && (
+                  <div style={{ marginBottom: 8 }}>
+                    <DeleteSessionButton sessionId={session.id} compact />
+                  </div>
+                )}
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 34, color: "var(--accent)", lineHeight: 1 }}>{inCount}</div>
                 <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 10.5,
                   letterSpacing: "0.08em", color: "rgba(241,239,230,0.55)", textTransform: "uppercase" }}>of {cap} in</div>
@@ -131,16 +138,23 @@ export function SessionCard({ session, inCount, userStatus, isHero }: Props) {
         <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
           <DateBlock date={date} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16.5,
-                color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {session.location_name}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 7 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16.5,
+                  color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {session.location_name}
+                </div>
+                {full && (
+                  <span style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 9.5,
+                    letterSpacing: "0.08em", color: "var(--maybe)",
+                    background: "color-mix(in srgb,var(--maybe) 15%,transparent)",
+                    padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>FULL</span>
+                )}
               </div>
-              {full && (
-                <span style={{ fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 9.5,
-                  letterSpacing: "0.08em", color: "var(--maybe)",
-                  background: "color-mix(in srgb,var(--maybe) 15%,transparent)",
-                  padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>FULL</span>
+              {isAdmin && (
+                <div style={{ flexShrink: 0 }}>
+                  <DeleteSessionButton sessionId={session.id} compact />
+                </div>
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3,
