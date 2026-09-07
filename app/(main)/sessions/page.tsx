@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { sql, type Session, type RsvpStatus, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
-import { SessionCard } from "@/components/SessionCard";
 import { HeroBanner } from "@/components/HeroBanner";
+import { SessionsList } from "@/components/SessionsList";
 
 export const dynamic = "force-dynamic";
 
@@ -206,50 +206,12 @@ export default async function SessionsPage() {
         )}
       </div>
 
-      {list.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "64px 20px", color: "var(--muted)",
-          fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 15 }}>
-          No upcoming sessions
-          {isAdmin && <p style={{ marginTop: 8, fontSize: 13, color: "var(--faint)" }}>Create the first one using the + button above.</p>}
-        </div>
-      ) : (
-        <>
-          {/* Hero card */}
-          <div style={{ padding: "0 20px 8px" }}>
-            <SessionCard
-              session={list[0]}
-              inCount={inCountBySession[list[0].id] ?? 0}
-              userStatus={myStatusBySession[list[0].id] ?? null}
-              isAdmin={isAdmin}
-              isHero
-            />
-          </div>
-
-          {/* Upcoming label */}
-          {list.length > 1 && (
-            <div style={{ padding: "12px 20px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
-                letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--faint)" }}>Upcoming</div>
-              <span style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 12.5, color: "var(--muted)", whiteSpace: "nowrap" }}>
-                {list.length} sessions
-              </span>
-            </div>
-          )}
-
-          {/* Rest of sessions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 11, padding: "0 20px 20px" }}>
-            {list.slice(1).map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                inCount={inCountBySession[session.id] ?? 0}
-                userStatus={myStatusBySession[session.id] ?? null}
-                isAdmin={isAdmin}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      <SessionsList
+        sessions={list}
+        inCountBySession={inCountBySession}
+        myStatusBySession={myStatusBySession}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }
