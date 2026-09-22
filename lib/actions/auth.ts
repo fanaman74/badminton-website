@@ -5,14 +5,11 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { generateSessionToken } from "@/lib/auth";
 import { sendOtpEmail } from "@/lib/email";
+import { ADMIN_ACCOUNTS, verifyAdminPassword } from "@/lib/admin";
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
-// Designated admin accounts and credentials
-const ADMIN_ACCOUNTS: Record<string, { name: string; password: string }> = {
-  "fredanaman@gmail.com": { name: "Fred", password: "Badminton26" },
-  "marika.vernon@yahoo.co.uk": { name: "Marika Vernon", password: "Badminton26" },
-};
+// Admin accounts and the ADMIN_PASSWORD check live in lib/admin.ts
 
 export async function createSessionForUser(userId: string, returnTo: string = "/sessions") {
   const sessionToken = generateSessionToken();
@@ -49,11 +46,10 @@ export async function emailAuthAction(
 
   const adminConfig = ADMIN_ACCOUNTS[email];
 
-  // If this email belongs to an admin account, verify password
+  // Admin emails must prove themselves with the admin password
   if (adminConfig) {
-    if (!password || password !== adminConfig.password) {
-      return { error: "Incorrect password for admin account. Please enter the admin password." };
-    }
+    const check = verifyAdminPassword(password);
+    if (!check.ok) return { error: check.error };
   }
 
   // Check if user already exists

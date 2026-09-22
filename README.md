@@ -45,6 +45,8 @@ A mobile-first web app to manage your badminton team: schedule sessions, track R
    - `RESEND_API_KEY` — Resend API key. Without it no email is sent: in development the
      login code is printed to the terminal instead, and in production email-code sign-in
      fails with "Email service is not configured".
+   - `ADMIN_PASSWORD` — password for the designated admin accounts. Admin password
+     sign-in is disabled while it is unset (admins can still use an emailed login code).
    - `NEXT_PUBLIC_APP_URL` — public origin used to build callback links.
    - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — only needed for Google sign-in.
 
@@ -94,7 +96,7 @@ neon.ts                      # Neon project policy configuration
 Deployable to Railway, Vercel, or any Node.js hosting provider:
 1. Connect your repository.
 2. Add the environment variables listed in `.env.example` (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`,
-   `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, ...) in your environment settings. On Railway
+   `RESEND_API_KEY`, `ADMIN_PASSWORD`, `NEXT_PUBLIC_APP_URL`, ...) in your environment settings. On Railway
    `RAILWAY_PUBLIC_DOMAIN` is injected automatically and used as a fallback for the public origin.
 3. Deploy.
 

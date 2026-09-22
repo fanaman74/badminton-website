@@ -354,7 +354,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
-                    placeholder="Enter Badminton26"
+                    placeholder="Enter admin password"
                     disabled={isLoading}
                     style={{
                       width: "100%",

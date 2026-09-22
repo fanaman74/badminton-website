@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { emailAuthAction, requestEmailOtpAction, verifyEmailOtpAction } from "@/lib/actions/auth";
 
@@ -243,7 +244,7 @@ function AuthForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type="password"
-                      placeholder="Enter Badminton26"
+                      placeholder="Enter admin password"
                       disabled={isLoading}
                       style={{
                         width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
@@ -429,9 +430,9 @@ function AuthForm() {
         </div>
 
         <p style={{ textAlign: "center", fontFamily: "var(--font-body)", fontSize: 12.5, color: "var(--muted)", marginTop: 18 }}>
-          <a href="/sessions" style={{ color: "var(--muted)", textDecoration: "underline" }}>
+          <Link href="/sessions" style={{ color: "var(--muted)", textDecoration: "underline" }}>
             ← Return to upcoming sessions
-          </a>
+          </Link>
         </p>
       </div>
     </div>
