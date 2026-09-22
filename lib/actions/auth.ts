@@ -17,9 +17,10 @@ import {
   OTP_KEY_PREFIX,
   OTP_REQUEST_KEY_PREFIX,
 } from "@/lib/rateLimit";
+import { AUTH_LIMITS } from "@/lib/authLimits";
 
-/** Shared window for every credential rate limit below */
-const AUTH_WINDOW_SECONDS = 15 * 60;
+/** Window shared by every credential rate limit — tunable via env, see lib/authLimits.ts */
+const AUTH_WINDOW_SECONDS = AUTH_LIMITS.windowSeconds;
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -69,7 +70,7 @@ export async function emailAuthAction(
 
   // Throttle password guessing against a single account
   const pwKey = `${PASSWORD_KEY_PREFIX}${email}`;
-  const pwLimit = await checkRateLimit(pwKey, 10, AUTH_WINDOW_SECONDS);
+  const pwLimit = await checkRateLimit(pwKey, AUTH_LIMITS.passwordAccount, AUTH_WINDOW_SECONDS);
   if (!pwLimit.allowed) {
     return { error: tooManyAttemptsMessage(pwLimit.retryAfterSeconds) };
   }
@@ -79,7 +80,7 @@ export async function emailAuthAction(
   const clientIp = await getClientIp();
   const ipKey = clientIp ? `ip-pw:${clientIp}` : null;
   if (ipKey) {
-    const ipLimit = await checkRateLimit(ipKey, 50, AUTH_WINDOW_SECONDS);
+    const ipLimit = await checkRateLimit(ipKey, AUTH_LIMITS.passwordIp, AUTH_WINDOW_SECONDS);
     if (!ipLimit.allowed) {
       return { error: tooManyAttemptsMessage(ipLimit.retryAfterSeconds) };
     }
@@ -160,7 +161,7 @@ export async function requestEmailOtpAction(
 
   // Throttle code requests per address — otherwise the form can be used to spam a mailbox
   const requestKey = `${OTP_REQUEST_KEY_PREFIX}${email}`;
-  const requestLimit = await checkRateLimit(requestKey, 5, AUTH_WINDOW_SECONDS);
+  const requestLimit = await checkRateLimit(requestKey, AUTH_LIMITS.otpRequestsAccount, AUTH_WINDOW_SECONDS);
   if (!requestLimit.allowed) {
     return { error: tooManyAttemptsMessage(requestLimit.retryAfterSeconds) };
   }
@@ -201,7 +202,7 @@ export async function verifyEmailOtpAction(
 
   // Throttle code guessing (6 digits is only a million combinations)
   const otpKey = `${OTP_KEY_PREFIX}${email}`;
-  const otpLimit = await checkRateLimit(otpKey, 10, AUTH_WINDOW_SECONDS);
+  const otpLimit = await checkRateLimit(otpKey, AUTH_LIMITS.otpAccount, AUTH_WINDOW_SECONDS);
   if (!otpLimit.allowed) {
     return { error: tooManyAttemptsMessage(otpLimit.retryAfterSeconds) };
   }
@@ -210,7 +211,7 @@ export async function verifyEmailOtpAction(
   const otpIp = await getClientIp();
   const otpIpKey = otpIp ? `ip-otp:${otpIp}` : null;
   if (otpIpKey) {
-    const ipLimit = await checkRateLimit(otpIpKey, 50, AUTH_WINDOW_SECONDS);
+    const ipLimit = await checkRateLimit(otpIpKey, AUTH_LIMITS.otpIp, AUTH_WINDOW_SECONDS);
     if (!ipLimit.allowed) {
       return { error: tooManyAttemptsMessage(ipLimit.retryAfterSeconds) };
     }

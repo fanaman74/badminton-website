@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, isDatabaseConfigured } from "@/lib/db";
 import { getEmailConfig } from "@/lib/email";
+import { describeAuthLimits } from "@/lib/authLimits";
 
 export async function GET() {
   const email = getEmailConfig();
@@ -24,6 +25,7 @@ export async function GET() {
       databaseConfigured: true,
       databaseConnected: Boolean(result?.[0]?.connected === 1),
       email,
+      rateLimits: describeAuthLimits(),
       timestamp: new Date().toISOString(),
     });
   } catch (error: unknown) {

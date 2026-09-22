@@ -48,6 +48,9 @@ A mobile-first web app to manage your badminton team: schedule sessions, track R
      fails with "Email service is not configured".
    - `ADMIN_PASSWORD` — password for the designated admin accounts. Admin password
      sign-in is disabled while it is unset (admins can still use an emailed login code).
+   - `RATE_LIMIT_*` — optional tuning of the sign-in rate limits (window and the
+     per-account / per-IP attempt budgets). All have working defaults, so unset is
+     fine; see `.env.example`. `GET /api/health` reports the values in force.
    - `NEXT_PUBLIC_APP_URL` — public origin used to build callback links.
    - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — only needed for Google sign-in.
 
