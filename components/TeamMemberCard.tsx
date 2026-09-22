@@ -260,24 +260,31 @@ export function TeamMemberCard({
               <button
                 onClick={() => setShowResetConfirm(true)}
                 disabled={isLoading || isDeleting || isResetting || sessions === 0}
-                title={sessions === 0 ? "No active logins to reset" : `Sign ${name} out of every device`}
+                title={
+                  sessions === 0
+                    ? "No active logins to reset"
+                    : `Reset access — sign ${name} out of every device`
+                }
                 style={{
-                  width: 32,
                   height: 32,
+                  padding: "0 10px",
                   borderRadius: "var(--r-sm)",
                   border: "1px solid var(--line)",
                   background: "var(--surface-2)",
                   color: sessions === 0 ? "var(--faint)" : "var(--brand)",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 700,
+                  fontSize: 12,
                   cursor: (isLoading || isDeleting || isResetting || sessions === 0) ? "not-allowed" : "pointer",
                   opacity: (isLoading || isDeleting || isResetting || sessions === 0) ? 0.5 : 1,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 13,
-                  transition: "all 0.15s ease",
+                  gap: 5,
+                  whiteSpace: "nowrap",
                 }}
               >
-                🔑
+                🔑 <span>Reset access</span>
               </button>
 
               {!isProtectedAdmin && (
@@ -371,7 +378,7 @@ export function TeamMemberCard({
                 marginBottom: 8,
               }}
             >
-              Reset access?
+              Reset this member&rsquo;s access?
             </h3>
             <p
               style={{
@@ -384,8 +391,9 @@ export function TeamMemberCard({
               }}
             >
               This signs <strong>{name}</strong> out of every device ({sessions} active login
-              {sessions === 1 ? "" : "s"}) and cancels any login code already sent. Their RSVPs,
-              profile and stats are untouched — they simply request a new code to get back in.
+              {sessions === 1 ? "" : "s"}) and cancels any login code already sent. Players sign in
+              with an emailed code rather than a password, so this is what a password reset does for
+              them — their RSVPs, profile and stats are untouched and they simply request a new code.
             </p>
             {resetError && (
               <div
