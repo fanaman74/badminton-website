@@ -260,7 +260,8 @@ function AuthForm() {
                   />
                 </div>
 
-                <div>
+                {mode === "signin" && (
+                  <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
                       <label htmlFor="password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
                         Password
@@ -285,6 +286,7 @@ function AuthForm() {
                       }}
                     />
                   </div>
+                )}
 
                 {error && (
                   <div style={{
@@ -328,7 +330,7 @@ function AuthForm() {
                   </button>
                 )}
 
-                {!password && (
+                {mode === "signin" && !password && (
                   <p style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
                     Leave the password blank to get a one-time code by email — or set a password in your profile.
                     {isAdminEmail && adminPasswordEnabled ? " Admins can also use the admin password." : ""}

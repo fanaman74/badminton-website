@@ -367,7 +367,8 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 />
               </div>
 
-              <div>
+              {mode === "signin" && (
+                <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                     <label htmlFor="modal-password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5, color: "var(--ink)" }}>
                       Password
@@ -399,6 +400,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                     }}
                   />
                 </div>
+              )}
 
               {error && (
                   <div role="alert"
@@ -463,7 +465,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 </button>
               )}
 
-              {!password && (
+              {mode === "signin" && !password && (
                 <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
                   Leave the password blank to get a one-time code by email — or set a password in your profile.
                   {isAdminEmail && adminPasswordEnabled ? " Admins can also use the admin password." : ""}

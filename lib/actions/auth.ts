@@ -46,6 +46,14 @@ export async function emailAuthAction(
     return { error: "Please enter a valid email address." };
   }
 
+  // SECURITY: this action must never mint a session without checking a credential.
+  // The emailed-code path goes through verifyEmailOtpAction instead. (Previously a
+  // non-admin email with no password was signed in with no verification at all.)
+  // Checked before any lookup so junk requests never touch the database.
+  if (!password) {
+    return { error: "Enter your password, or request a login code by email." };
+  }
+
   const adminConfig = ADMIN_ACCOUNTS[email];
 
   // Look the member up once, so we have their stored hash to verify against
@@ -59,13 +67,6 @@ export async function emailAuthAction(
   const existing = existingRows[0] as
     | { id: string; name: string; role: string; password_hash: string | null }
     | undefined;
-
-  // SECURITY: this action must never mint a session without checking a credential.
-  // The emailed-code path goes through verifyEmailOtpAction instead. (Previously a
-  // non-admin email with no password was signed in with no verification at all.)
-  if (!password) {
-    return { error: "Enter your password, or request a login code by email." };
-  }
 
   const passwordMatches =
     (existing?.password_hash ? verifyPassword(password, existing.password_hash) : false) ||
