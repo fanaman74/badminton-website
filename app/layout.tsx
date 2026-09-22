@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthFlagsProvider } from "@/components/AuthFlags";
+import { isAdminPasswordConfigured } from "@/lib/admin";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -32,7 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${archivo.variable} ${schibsted.variable} h-full`}
       style={{ "--font-display": `var(--font-archivo)`, "--font-body": `var(--font-schibsted)` } as React.CSSProperties}>
       <body className="h-full antialiased" style={{ background: "var(--bg)", color: "var(--ink)", fontFamily: "var(--font-body)" }}>
-        <TooltipProvider>{children}</TooltipProvider>
+        <AuthFlagsProvider adminPasswordEnabled={isAdminPasswordConfigured()}>
+          <TooltipProvider>{children}</TooltipProvider>
+        </AuthFlagsProvider>
       </body>
     </html>
   );

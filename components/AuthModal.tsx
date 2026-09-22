@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { emailAuthAction, requestEmailOtpAction, verifyEmailOtpAction } from "@/lib/actions/auth";
+import { useAdminPasswordEnabled } from "@/components/AuthFlags";
 
 interface Props {
   isOpen: boolean;
@@ -27,6 +28,9 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpSuccessMessage, setOtpSuccessMessage] = useState<string | null>(null);
+
+  // Must be called before the early return below, so the hook order never changes.
+  const adminPasswordEnabled = useAdminPasswordEnabled();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -339,7 +343,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 />
               </div>
 
-              {isAdminEmail && (
+              {isAdminEmail && adminPasswordEnabled && (
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                     <label htmlFor="modal-password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5, color: "var(--ink)" }}>
@@ -389,7 +393,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 </div>
               )}
 
-              {isAdminEmail && password ? (
+              {isAdminEmail && adminPasswordEnabled && password ? (
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -435,7 +439,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 </button>
               )}
 
-              {isAdminEmail && !password && (
+              {isAdminEmail && adminPasswordEnabled && !password && (
                 <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--muted)", margin: "4px 0 0" }}>
                   Admins can enter password above or receive an email code.
                 </p>

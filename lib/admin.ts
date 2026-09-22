@@ -20,6 +20,14 @@ export function getAdminPassword(): string | null {
 }
 
 /**
+ * Whether admins can sign in with a password at all. Used to hide the password
+ * field instead of showing one that can never succeed.
+ */
+export function isAdminPasswordConfigured(): boolean {
+  return getAdminPassword() !== null;
+}
+
+/**
  * Validates an admin password.
  *
  * Fails closed: when ADMIN_PASSWORD is not set, no password is accepted, so a

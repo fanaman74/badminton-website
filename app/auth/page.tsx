@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { emailAuthAction, requestEmailOtpAction, verifyEmailOtpAction } from "@/lib/actions/auth";
+import { useAdminPasswordEnabled } from "@/components/AuthFlags";
 
 const ADMIN_EMAILS = ["fredanaman@gmail.com", "marika.vernon@yahoo.co.uk"];
 
@@ -26,6 +27,9 @@ function AuthForm() {
   const [otpSuccessMessage, setOtpSuccessMessage] = useState<string | null>(null);
 
   const isAdminEmail = ADMIN_EMAILS.includes(email.trim().toLowerCase());
+  // False unless the server has ADMIN_PASSWORD set, so we never show a field
+  // that cannot succeed.
+  const adminPasswordEnabled = useAdminPasswordEnabled();
 
   async function handleSendOtp(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -229,7 +233,7 @@ function AuthForm() {
                   />
                 </div>
 
-                {isAdminEmail && (
+                {isAdminEmail && adminPasswordEnabled && (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
                       <label htmlFor="password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
@@ -266,7 +270,7 @@ function AuthForm() {
                   </div>
                 )}
 
-                {isAdminEmail && password ? (
+                {isAdminEmail && adminPasswordEnabled && password ? (
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -297,7 +301,7 @@ function AuthForm() {
                   </button>
                 )}
 
-                {isAdminEmail && !password && (
+                {isAdminEmail && adminPasswordEnabled && !password && (
                   <p style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", margin: "4px 0 0" }}>
                     Admins can enter password above or receive an email code.
                   </p>
