@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useActionState, useTransition } from "react";
-import { updateProfileAction, updateEmailNotificationsAction } from "@/lib/actions/profile";
+import { updateProfileAction, updateEmailNotificationsAction, setPasswordAction } from "@/lib/actions/profile";
 
 interface ProfileEditFormProps {
   name: string;
@@ -9,6 +9,7 @@ interface ProfileEditFormProps {
   userId: string;
   isAdmin: boolean;
   emailNotifications: boolean;
+  hasPassword: boolean;
 }
 
 export function ProfileEditForm({
@@ -17,9 +18,24 @@ export function ProfileEditForm({
   userId,
   isAdmin,
   emailNotifications: initialEmailNotifications,
+  hasPassword: initialHasPassword,
 }: ProfileEditFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [notificationsOn, setNotificationsOn] = useState(initialEmailNotifications);
+  const [hasPassword, setHasPassword] = useState(initialHasPassword);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [isSavingPassword, startPasswordTransition] = useTransition();
+
+  const passwordInput: React.CSSProperties = {
+    width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
+    padding: "11px 13px", fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 14.5,
+    color: "var(--ink)", background: "var(--surface-2)", outline: "none",
+  };
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [notificationSaved, setNotificationSaved] = useState(false);
   const [isSavingNotification, startNotificationTransition] = useTransition();
@@ -58,6 +74,29 @@ export function ProfileEditForm({
       } catch {
         setNotificationsOn(!next);
         setNotificationError("We couldn’t save your preference. Please try again.");
+      }
+    });
+  };
+
+  const handleSavePassword = () => {
+    setPasswordError(null);
+    setPasswordSaved(false);
+
+    startPasswordTransition(async () => {
+      try {
+        const res = await setPasswordAction(currentPassword, newPassword, confirmPassword);
+        if (res.error) {
+          setPasswordError(res.error);
+          return;
+        }
+        setHasPassword(true);
+        setShowPasswordForm(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setPasswordSaved(true);
+      } catch {
+        setPasswordError("We couldn’t save your password. Please try again.");
       }
     });
   };
@@ -369,6 +408,95 @@ export function ProfileEditForm({
         {notificationSaved && (
           <div role="status" aria-live="polite" style={{ marginTop: 8, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12, color: "var(--in)" }}>
             Saved
+          </div>
+        )}
+      </div>
+
+      <div style={{ borderTop: "1px solid var(--line)", paddingTop: 14, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+              Password
+            </div>
+            <div style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 12, color: "var(--muted)", marginTop: 3, lineHeight: 1.4 }}>
+              {hasPassword
+                ? "Sign in with your email and this password — no code needed."
+                : "Set a password to sign in without waiting for an emailed code."}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowPasswordForm((open) => !open);
+              setPasswordError(null);
+              setPasswordSaved(false);
+            }}
+            style={{
+              flexShrink: 0, height: 32, padding: "0 12px", borderRadius: "var(--r-sm)",
+              border: "1px solid var(--line)", background: "var(--surface-2)", color: "var(--brand)",
+              fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap",
+            }}
+          >
+            {showPasswordForm ? "Cancel" : hasPassword ? "Change password" : "Set a password"}
+          </button>
+        </div>
+
+        {showPasswordForm && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+            {hasPassword && (
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Current password"
+                autoComplete="current-password"
+                disabled={isSavingPassword}
+                style={passwordInput}
+              />
+            )}
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="New password — 8+ characters, letters and numbers"
+              autoComplete="new-password"
+              disabled={isSavingPassword}
+              style={passwordInput}
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              autoComplete="new-password"
+              disabled={isSavingPassword}
+              style={passwordInput}
+            />
+            <button
+              type="button"
+              onClick={handleSavePassword}
+              disabled={isSavingPassword}
+              style={{
+                height: 42, borderRadius: "var(--r-md)", border: "none",
+                background: "var(--brand)", color: "#fff",
+                fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 14,
+                cursor: isSavingPassword ? "not-allowed" : "pointer",
+                opacity: isSavingPassword ? 0.7 : 1,
+              }}
+            >
+              {isSavingPassword ? "Saving…" : hasPassword ? "Update password" : "Save password"}
+            </button>
+            {passwordError && (
+              <div role="alert" style={{ color: "var(--out)", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12 }}>
+                {passwordError}
+              </div>
+            )}
+          </div>
+        )}
+
+        {passwordSaved && !showPasswordForm && (
+          <div role="status" aria-live="polite" style={{ marginTop: 8, color: "var(--in)", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12 }}>
+            ✓ Password saved — you can sign in with it now
           </div>
         )}
       </div>

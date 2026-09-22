@@ -10,6 +10,7 @@ interface TeamMemberCardProps {
   email: string | null;
   role: "ADMIN" | "PLAYER";
   activeSessions: number;
+  authProvider: "email" | "google";
   isCurrentUser: boolean;
   currentUserIsAdmin: boolean;
 }
@@ -20,6 +21,7 @@ export function TeamMemberCard({
   email,
   role,
   activeSessions,
+  authProvider,
   isCurrentUser,
   currentUserIsAdmin,
 }: TeamMemberCardProps) {
@@ -201,11 +203,13 @@ export function TeamMemberCard({
                 color: resetDone ? "var(--in)" : sessions > 0 ? "var(--muted)" : "var(--faint)",
               }}
             >
-              {resetDone
-                ? "✓ Access reset — they must request a new code"
-                : sessions > 0
-                  ? `🔒 ${sessions} active login${sessions === 1 ? "" : "s"}`
-                  : "🔒 No active logins"}
+              {authProvider === "google"
+                ? "🌐 Signs in with Google — no local access to reset"
+                : resetDone
+                  ? "✓ Access reset — they must request a new code"
+                  : sessions > 0
+                    ? `🔒 ${sessions} active login${sessions === 1 ? "" : "s"}`
+                    : "🔒 No active logins"}
             </div>
           </div>
         </div>
@@ -257,35 +261,37 @@ export function TeamMemberCard({
                 {currentRole === "ADMIN" ? "Demote" : "+ Admin"}
               </button>
 
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                disabled={isLoading || isDeleting || isResetting || sessions === 0}
-                title={
-                  sessions === 0
-                    ? "No active logins to reset"
-                    : `Reset access — sign ${name} out of every device`
-                }
-                style={{
-                  height: 32,
-                  padding: "0 10px",
-                  borderRadius: "var(--r-sm)",
-                  border: "1px solid var(--line)",
-                  background: "var(--surface-2)",
-                  color: sessions === 0 ? "var(--faint)" : "var(--brand)",
-                  fontFamily: "var(--font-body)",
-                  fontWeight: 700,
-                  fontSize: 12,
-                  cursor: (isLoading || isDeleting || isResetting || sessions === 0) ? "not-allowed" : "pointer",
-                  opacity: (isLoading || isDeleting || isResetting || sessions === 0) ? 0.5 : 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 5,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                🔑 <span>Reset access</span>
-              </button>
+              {authProvider !== "google" && (
+                <button
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={isLoading || isDeleting || isResetting || sessions === 0}
+                  title={
+                    sessions === 0
+                      ? "No active logins to reset"
+                      : `Reset access — sign ${name} out of every device`
+                  }
+                  style={{
+                    height: 32,
+                    padding: "0 10px",
+                    borderRadius: "var(--r-sm)",
+                    border: "1px solid var(--line)",
+                    background: "var(--surface-2)",
+                    color: sessions === 0 ? "var(--faint)" : "var(--brand)",
+                    fontFamily: "var(--font-body)",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: (isLoading || isDeleting || isResetting || sessions === 0) ? "not-allowed" : "pointer",
+                    opacity: (isLoading || isDeleting || isResetting || sessions === 0) ? 0.5 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 5,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  🔑 <span>Reset access</span>
+                </button>
+              )}
 
               {!isProtectedAdmin && (
                 <button

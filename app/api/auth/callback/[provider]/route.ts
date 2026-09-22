@@ -69,12 +69,14 @@ export async function GET(
       if (isAdminEmail && existing[0].role !== "ADMIN") {
         await sql`UPDATE profiles SET role = 'ADMIN' WHERE id = ${userId};`;
       }
+      // This member signs in with Google (SSO), so there is no local password to reset
+      await sql`UPDATE profiles SET auth_provider = 'google' WHERE id = ${userId} AND auth_provider <> 'google';`;
     } else {
       const playerName = name || email.split("@")[0];
       const role = isAdminEmail ? "ADMIN" : "PLAYER";
       const inserted = await sql`
-        INSERT INTO profiles (name, email, role)
-        VALUES (${playerName}, ${email}, ${role})
+        INSERT INTO profiles (name, email, role, auth_provider)
+        VALUES (${playerName}, ${email}, ${role}, 'google')
         RETURNING id;
       `;
       userId = inserted[0]?.id as string;

@@ -233,22 +233,23 @@ function AuthForm() {
                   />
                 </div>
 
-                {isAdminEmail && adminPasswordEnabled && (
-                  <div>
+                <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
                       <label htmlFor="password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
-                        Admin Password
+                        Password
                       </label>
-                      <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)", fontWeight: 700 }}>
-                        Admin Account
-                      </span>
+                      {isAdminEmail && (
+                        <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)", fontWeight: 700 }}>
+                          Admin Account
+                        </span>
+                      )}
                     </div>
                     <input
                       id="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type="password"
-                      placeholder="Enter admin password"
+                      placeholder="Your password (or leave blank for a code)"
                       disabled={isLoading}
                       style={{
                         width: "100%", borderRadius: "var(--r-sm)", border: "1.5px solid var(--line)",
@@ -257,7 +258,6 @@ function AuthForm() {
                       }}
                     />
                   </div>
-                )}
 
                 {error && (
                   <div style={{
@@ -270,7 +270,7 @@ function AuthForm() {
                   </div>
                 )}
 
-                {isAdminEmail && adminPasswordEnabled && password ? (
+                {password ? (
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -301,9 +301,10 @@ function AuthForm() {
                   </button>
                 )}
 
-                {isAdminEmail && adminPasswordEnabled && !password && (
-                  <p style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", margin: "4px 0 0" }}>
-                    Admins can enter password above or receive an email code.
+                {!password && (
+                  <p style={{ textAlign: "center", fontSize: 12, color: "var(--muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
+                    Leave the password blank to get a one-time code by email — or set a password in your profile.
+                    {isAdminEmail && adminPasswordEnabled ? " Admins can also use the admin password." : ""}
                   </p>
                 )}
               </form>

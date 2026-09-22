@@ -12,11 +12,11 @@ export default async function YouPage() {
 
   const profileRows = userId
     ? ((await sql`
-        SELECT name, email, role, email_notifications
+        SELECT name, email, role, email_notifications, password_hash
         FROM profiles
         WHERE id = ${userId}
         LIMIT 1;
-      `) as Pick<Profile, "name" | "email" | "role" | "email_notifications">[])
+      `) as Pick<Profile, "name" | "email" | "role" | "email_notifications" | "password_hash">[])
     : [];
 
   const profile = profileRows[0];
@@ -91,6 +91,7 @@ export default async function YouPage() {
             userId={userId!}
             isAdmin={profile?.role === "ADMIN"}
             emailNotifications={profile?.email_notifications ?? true}
+            hasPassword={Boolean(profile?.password_hash)}
           />
         </section>
 

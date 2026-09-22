@@ -343,22 +343,23 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 />
               </div>
 
-              {isAdminEmail && adminPasswordEnabled && (
-                <div>
+              <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                     <label htmlFor="modal-password" style={{ display: "block", fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12.5, color: "var(--ink)" }}>
-                      Admin Password
+                      Password
                     </label>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)", fontWeight: 700 }}>
-                      Admin Account
-                    </span>
+                    {isAdminEmail && (
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--brand)", fontWeight: 700 }}>
+                        Admin Account
+                      </span>
+                    )}
                   </div>
                   <input
                     id="modal-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
-                    placeholder="Enter admin password"
+                    placeholder="Your password (or leave blank for a code)"
                     disabled={isLoading}
                     style={{
                       width: "100%",
@@ -374,7 +375,6 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                     }}
                   />
                 </div>
-              )}
 
               {error && (
                   <div role="alert"
@@ -393,7 +393,7 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 </div>
               )}
 
-              {isAdminEmail && adminPasswordEnabled && password ? (
+              {password ? (
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -439,9 +439,10 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
                 </button>
               )}
 
-              {isAdminEmail && adminPasswordEnabled && !password && (
-                <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--muted)", margin: "4px 0 0" }}>
-                  Admins can enter password above or receive an email code.
+              {!password && (
+                <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
+                  Leave the password blank to get a one-time code by email — or set a password in your profile.
+                  {isAdminEmail && adminPasswordEnabled ? " Admins can also use the admin password." : ""}
                 </p>
               )}
             </form>

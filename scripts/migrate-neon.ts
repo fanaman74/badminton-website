@@ -35,6 +35,30 @@ async function migrate() {
   `;
   console.log("  ✓ Ensured profiles.email_notifications");
 
+  // How the member signs in: 'email' (our emailed login code) or 'google' (SSO).
+  // Used to offer access resets only where a local login actually exists.
+  await sql`
+    ALTER TABLE profiles
+    ADD COLUMN IF NOT EXISTS auth_provider TEXT NOT NULL DEFAULT 'email'
+  `;
+  await sql`
+    ALTER TABLE profiles
+    DROP CONSTRAINT IF EXISTS profiles_auth_provider_check
+  `;
+  await sql`
+    ALTER TABLE profiles
+    ADD CONSTRAINT profiles_auth_provider_check CHECK (auth_provider IN ('email', 'google'))
+  `;
+  console.log("  ✓ Ensured profiles.auth_provider");
+
+  // Members can set a password so they don't need an emailed code every time.
+  // Stored as scrypt$N$salt$hash — see lib/passwords.ts.
+  await sql`
+    ALTER TABLE profiles
+    ADD COLUMN IF NOT EXISTS password_hash TEXT
+  `;
+  console.log("  ✓ Ensured profiles.password_hash");
+
   await sql`
     CREATE TABLE IF NOT EXISTS user_sessions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

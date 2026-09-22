@@ -6,14 +6,14 @@ export default async function TeamPage() {
   const userId = await getCurrentUserId();
 
   const profiles = (await sql`
-    SELECT p.id, p.name, p.email, p.role,
+    SELECT p.id, p.name, p.email, p.role, p.auth_provider,
            (SELECT COUNT(*)::int
               FROM user_sessions s
              WHERE s.user_id = p.id
                AND s.expires_at >= NOW()) AS active_sessions
     FROM profiles p
     ORDER BY p.name ASC;
-  `) as (Pick<Profile, "id" | "name" | "email" | "role"> & { active_sessions: number })[];
+  `) as (Pick<Profile, "id" | "name" | "email" | "role" | "auth_provider"> & { active_sessions: number })[];
 
   const currentUserRows = userId
     ? await sql`
@@ -80,6 +80,7 @@ export default async function TeamPage() {
             email={p.email}
             role={p.role}
             activeSessions={p.active_sessions}
+            authProvider={p.auth_provider}
             isCurrentUser={p.id === userId}
             currentUserIsAdmin={currentUserIsAdmin}
           />

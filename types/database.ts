@@ -17,6 +17,8 @@ export interface Database {
           role: "ADMIN" | "PLAYER";
           balance: number;
           email_notifications: boolean;
+          auth_provider: "email" | "google";
+          password_hash: string | null;
           created_at: string;
         };
         Insert: {
@@ -26,6 +28,8 @@ export interface Database {
           role?: "ADMIN" | "PLAYER";
           balance?: number;
           email_notifications?: boolean;
+          auth_provider?: "email" | "google";
+          password_hash?: string | null;
           created_at?: string;
         };
         Update: {
@@ -35,6 +39,8 @@ export interface Database {
           role?: "ADMIN" | "PLAYER";
           balance?: number;
           email_notifications?: boolean;
+          auth_provider?: "email" | "google";
+          password_hash?: string | null;
           created_at?: string;
         };
         Relationships: [];

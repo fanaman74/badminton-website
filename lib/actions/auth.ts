@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { generateSessionToken } from "@/lib/auth";
 import { sendOtpEmail } from "@/lib/email";
 import { ADMIN_ACCOUNTS, verifyAdminPassword } from "@/lib/admin";
+import { verifyPassword } from "@/lib/passwords";
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -36,7 +37,8 @@ export async function emailAuthAction(
   formData: FormData
 ): Promise<{ error?: string; success?: boolean } | undefined> {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const password = (formData.get("password") as string)?.trim();
+  // Deliberately not trimmed: a password is hashed and verified byte for byte
+  const password = (formData.get("password") as string) ?? "";
   const name = (formData.get("name") as string)?.trim();
   const returnTo = (formData.get("returnTo") as string) || "/sessions";
 
@@ -46,26 +48,45 @@ export async function emailAuthAction(
 
   const adminConfig = ADMIN_ACCOUNTS[email];
 
-  // Admin emails must prove themselves with the admin password
-  if (adminConfig) {
-    const check = verifyAdminPassword(password);
-    if (!check.ok) return { error: check.error };
-  }
-
-  // Check if user already exists
+  // Look the member up once, so we have their stored hash to verify against
   const existingRows = await sql`
-    SELECT id, name, role
-    FROM profiles 
-    WHERE LOWER(email) = ${email} 
+    SELECT id, name, role, password_hash
+    FROM profiles
+    WHERE LOWER(email) = ${email}
     LIMIT 1;
   `;
 
+  const existing = existingRows[0] as
+    | { id: string; name: string; role: string; password_hash: string | null }
+    | undefined;
+
+  // SECURITY: this action must never mint a session without checking a credential.
+  // The emailed-code path goes through verifyEmailOtpAction instead. (Previously a
+  // non-admin email with no password was signed in with no verification at all.)
+  if (!password) {
+    return { error: "Enter your password, or request a login code by email." };
+  }
+
+  const passwordMatches =
+    (existing?.password_hash ? verifyPassword(password, existing.password_hash) : false) ||
+    (adminConfig ? verifyAdminPassword(password).ok : false);
+
+  if (!passwordMatches) {
+    if (!existing?.password_hash && !adminConfig) {
+      return {
+        error:
+          "No password is set for this email yet. Request a login code instead, then set a password from your profile.",
+      };
+    }
+    return { error: "Incorrect email or password." };
+  }
+
   let userId: string;
 
-  if (existingRows && existingRows.length > 0) {
-    userId = existingRows[0].id as string;
+  if (existing) {
+    userId = existing.id;
     // Upgrade or confirm admin role if applicable
-    if (adminConfig && existingRows[0].role !== "ADMIN") {
+    if (adminConfig && existing.role !== "ADMIN") {
       await sql`
         UPDATE profiles
         SET role = 'ADMIN', name = COALESCE(NULLIF(name, ''), ${adminConfig.name})
@@ -73,12 +94,9 @@ export async function emailAuthAction(
       `;
     }
   } else {
-    // New registration
-    const playerName =
-      name ||
-      (adminConfig
-        ? adminConfig.name
-        : email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
+    // Only reachable for a designated admin email that has no profile yet, since
+    // everyone else needs an existing password to get this far
+    const playerName = name || (adminConfig ? adminConfig.name : email.split("@")[0]);
     const role = adminConfig ? "ADMIN" : "PLAYER";
 
     const insertRows = await sql`
@@ -88,6 +106,9 @@ export async function emailAuthAction(
     `;
     userId = insertRows[0]?.id as string;
   }
+
+  // Local sign-in (emailed code / admin password) — access resets apply to them
+  await sql`UPDATE profiles SET auth_provider = 'email' WHERE id = ${userId} AND auth_provider <> 'email';`;
 
   await createSessionForUser(userId, returnTo);
 }
@@ -187,6 +208,9 @@ export async function verifyEmailOtpAction(
     `;
     userId = insertRows[0]?.id as string;
   }
+
+  // Local sign-in (emailed code) — access resets apply to them
+  await sql`UPDATE profiles SET auth_provider = 'email' WHERE id = ${userId} AND auth_provider <> 'email';`;
 
   await createSessionForUser(userId, returnTo);
   return { success: true };

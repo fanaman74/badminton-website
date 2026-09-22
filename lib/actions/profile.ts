@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
+import { checkPasswordStrength, hashPassword, verifyPassword } from "@/lib/passwords";
 
 export async function updateProfileAction(
   _prevState: { error?: string; success?: boolean } | void | undefined,
@@ -74,6 +75,59 @@ export async function updateEmailNotificationsAction(
   return { success: true };
 }
 
+/**
+ * Sets or changes the signed-in member's password, so they can sign in without
+ * waiting for an emailed code. Requires the current password when one is already
+ * set. Stored as a scrypt hash — see lib/passwords.ts.
+ */
+export async function setPasswordAction(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ error?: string; success?: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const rows = await sql`
+    SELECT password_hash
+    FROM profiles
+    WHERE id = ${userId}
+    LIMIT 1;
+  `;
+
+  const existing = rows[0] as { password_hash: string | null } | undefined;
+  if (!existing) return { error: "Profile not found." };
+
+  if (existing.password_hash && !verifyPassword(currentPassword ?? "", existing.password_hash)) {
+    return { error: "Your current password is incorrect." };
+  }
+
+  const strength = checkPasswordStrength(newPassword);
+  if (!strength.ok) return { error: strength.error };
+
+  if ((newPassword ?? "") !== (confirmPassword ?? "")) {
+    return { error: "The two passwords do not match." };
+  }
+
+  if (existing.password_hash && verifyPassword(newPassword, existing.password_hash)) {
+    return { error: "That is already your current password." };
+  }
+
+  try {
+    await sql`
+      UPDATE profiles
+      SET password_hash = ${hashPassword(newPassword)}, auth_provider = 'email'
+      WHERE id = ${userId};
+    `;
+  } catch (err) {
+    console.error("[setPasswordAction] Failed to save password:", err);
+    return { error: "Could not save your password. Please try again." };
+  }
+
+  revalidatePath("/you");
+  return { success: true };
+}
+
 export async function updateUserRoleAction(
   targetUserId: string,
   newRole: "ADMIN" | "PLAYER"
@@ -134,21 +188,38 @@ export async function resetMemberAccessAction(
   }
 
   const targetUsers = await sql`
-    SELECT id, email
+    SELECT id, email, auth_provider
     FROM profiles
     WHERE id = ${targetUserId}
     LIMIT 1;
   `;
 
-  const target = targetUsers[0] as { id: string; email: string | null } | undefined;
+  const target = targetUsers[0] as
+    | { id: string; email: string | null; auth_provider: "email" | "google" }
+    | undefined;
   if (!target) {
     return { error: "Member not found." };
+  }
+
+  // Google/SSO members have no local login to reset — they authenticate with Google
+  if (target.auth_provider === "google") {
+    return {
+      error: "This member signs in with Google, so there is no local access to reset.",
+    };
   }
 
   const ended = await sql`
     DELETE FROM user_sessions
     WHERE user_id = ${targetUserId}
     RETURNING id;
+  `;
+
+  // A stored password would let them straight back in, so clear it too — this is
+  // what makes it a real reset: they sign in with a fresh code and set a new one.
+  await sql`
+    UPDATE profiles
+    SET password_hash = NULL
+    WHERE id = ${targetUserId} AND password_hash IS NOT NULL;
   `;
 
   // Any code already emailed becomes useless, so they ask for a new one
