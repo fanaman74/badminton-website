@@ -108,6 +108,58 @@ export async function updateUserRoleAction(
   return { success: true };
 }
 
+/**
+ * Ends every active login for a member and voids any login code still in flight.
+ *
+ * Non-destructive: the member's profile, RSVPs and stats are untouched — their
+ * session cookie simply stops resolving, so they must request a fresh emailed
+ * code. Useful when someone lost a device, shared a link or can't get in.
+ */
+export async function resetMemberAccessAction(
+  targetUserId: string
+): Promise<{ error?: string; success?: boolean; sessionsEnded?: number }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  // Only administrators may reset someone else's access
+  const currentUsers = await sql`
+    SELECT role
+    FROM profiles
+    WHERE id = ${userId}
+    LIMIT 1;
+  `;
+
+  if (!currentUsers || currentUsers[0]?.role !== "ADMIN") {
+    return { error: "Not authorized. Only administrators can reset a member's access." };
+  }
+
+  const targetUsers = await sql`
+    SELECT id, email
+    FROM profiles
+    WHERE id = ${targetUserId}
+    LIMIT 1;
+  `;
+
+  const target = targetUsers[0] as { id: string; email: string | null } | undefined;
+  if (!target) {
+    return { error: "Member not found." };
+  }
+
+  const ended = await sql`
+    DELETE FROM user_sessions
+    WHERE user_id = ${targetUserId}
+    RETURNING id;
+  `;
+
+  // Any code already emailed becomes useless, so they ask for a new one
+  if (target.email) {
+    await sql`DELETE FROM email_otps WHERE LOWER(email) = ${target.email.toLowerCase()};`;
+  }
+
+  revalidatePath("/team");
+  return { success: true, sessionsEnded: ended?.length ?? 0 };
+}
+
 export async function deleteMemberAction(
   targetUserId: string
 ): Promise<{ error?: string; success?: boolean }> {

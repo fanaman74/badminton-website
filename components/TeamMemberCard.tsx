@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateUserRoleAction, deleteMemberAction } from "@/lib/actions/profile";
+import { updateUserRoleAction, deleteMemberAction, resetMemberAccessAction } from "@/lib/actions/profile";
 
 interface TeamMemberCardProps {
   id: string;
   name: string;
   email: string | null;
   role: "ADMIN" | "PLAYER";
+  activeSessions: number;
   isCurrentUser: boolean;
   currentUserIsAdmin: boolean;
 }
@@ -18,6 +19,7 @@ export function TeamMemberCard({
   name,
   email,
   role,
+  activeSessions,
   isCurrentUser,
   currentUserIsAdmin,
 }: TeamMemberCardProps) {
@@ -30,6 +32,12 @@ export function TeamMemberCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleted, setIsDeleted] = useState(false);
+
+  const [sessions, setSessions] = useState(activeSessions);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetDone, setResetDone] = useState(false);
 
   const isProtectedAdmin =
     email?.toLowerCase() === "fredanaman@gmail.com" ||
@@ -92,6 +100,24 @@ export function TeamMemberCard({
       setIsDeleted(true);
       router.refresh();
     }
+  }
+
+  async function handleResetAccess() {
+    setIsResetting(true);
+    setResetError(null);
+
+    const result = await resetMemberAccessAction(id);
+    if (result.error) {
+      setResetError(result.error);
+      setIsResetting(false);
+      return;
+    }
+
+    setSessions(0);
+    setShowResetConfirm(false);
+    setIsResetting(false);
+    setResetDone(true);
+    router.refresh();
   }
 
   if (isDeleted) {
@@ -165,6 +191,22 @@ export function TeamMemberCard({
                 {email}
               </div>
             )}
+            <div
+              role="status"
+              style={{
+                marginTop: 5,
+                fontFamily: "var(--font-body)",
+                fontWeight: 700,
+                fontSize: 11.5,
+                color: resetDone ? "var(--in)" : sessions > 0 ? "var(--muted)" : "var(--faint)",
+              }}
+            >
+              {resetDone
+                ? "✓ Access reset — they must request a new code"
+                : sessions > 0
+                  ? `🔒 ${sessions} active login${sessions === 1 ? "" : "s"}`
+                  : "🔒 No active logins"}
+            </div>
           </div>
         </div>
 
@@ -213,6 +255,29 @@ export function TeamMemberCard({
                 }}
               >
                 {currentRole === "ADMIN" ? "Demote" : "+ Admin"}
+              </button>
+
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                disabled={isLoading || isDeleting || isResetting || sessions === 0}
+                title={sessions === 0 ? "No active logins to reset" : `Sign ${name} out of every device`}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "var(--r-sm)",
+                  border: "1px solid var(--line)",
+                  background: "var(--surface-2)",
+                  color: sessions === 0 ? "var(--faint)" : "var(--brand)",
+                  cursor: (isLoading || isDeleting || isResetting || sessions === 0) ? "not-allowed" : "pointer",
+                  opacity: (isLoading || isDeleting || isResetting || sessions === 0) ? 0.5 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 13,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                🔑
               </button>
 
               {!isProtectedAdmin && (
@@ -265,6 +330,129 @@ export function TeamMemberCard({
           </div>
         )}
       </div>
+
+      {showResetConfirm && (
+        <div
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          <div
+            style={{
+              background: "var(--surface)",
+              borderRadius: "var(--r-lg)",
+              padding: "24px 20px 20px",
+              maxWidth: 380,
+              width: "100%",
+              border: "1px solid var(--line)",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔑</div>
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 800,
+                fontSize: 20,
+                color: "var(--ink)",
+                marginBottom: 8,
+              }}
+            >
+              Reset access?
+            </h3>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontWeight: 500,
+                fontSize: 13.5,
+                color: "var(--muted)",
+                marginBottom: 18,
+                lineHeight: 1.5,
+              }}
+            >
+              This signs <strong>{name}</strong> out of every device ({sessions} active login
+              {sessions === 1 ? "" : "s"}) and cancels any login code already sent. Their RSVPs,
+              profile and stats are untouched — they simply request a new code to get back in.
+            </p>
+            {resetError && (
+              <div
+                role="alert"
+                style={{
+                  background: "color-mix(in srgb, var(--out) 10%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--out) 30%, transparent)",
+                  borderRadius: "var(--r-sm)",
+                  padding: "8px 12px",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "var(--out)",
+                  marginBottom: 14,
+                }}
+              >
+                {resetError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowResetConfirm(false);
+                  setResetError(null);
+                }}
+                disabled={isResetting}
+                style={{
+                  flex: 1,
+                  height: 38,
+                  borderRadius: "var(--r-md)",
+                  border: "1px solid var(--line)",
+                  background: "var(--surface-2)",
+                  color: "var(--ink)",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: isResetting ? "not-allowed" : "pointer",
+                  opacity: isResetting ? 0.5 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetAccess}
+                disabled={isResetting}
+                style={{
+                  flex: 1,
+                  height: 38,
+                  borderRadius: "var(--r-md)",
+                  border: "none",
+                  background: "var(--brand)",
+                  color: "#fff",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: isResetting ? "not-allowed" : "pointer",
+                  opacity: isResetting ? 0.5 : 1,
+                }}
+              >
+                {isResetting ? "Resetting…" : "Reset access"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteConfirm && (
         <div
