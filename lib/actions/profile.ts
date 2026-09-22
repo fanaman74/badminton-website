@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { getCurrentUserId, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { checkPasswordStrength, hashPassword, verifyPassword } from "@/lib/passwords";
+import { clearAccountLimits } from "@/lib/rateLimit";
 
 export async function updateProfileAction(
   _prevState: { error?: string; success?: boolean } | void | undefined,
@@ -140,6 +141,45 @@ export async function setPasswordAction(
 
   revalidatePath("/you");
   return { success: true };
+}
+
+/**
+ * Clears a member's sign-in rate-limit counters so they can try again straight away,
+ * instead of waiting out the window. Admin-only, and it touches only the counters:
+ * their sessions, password and data are untouched.
+ */
+export async function clearMemberLockoutAction(
+  targetUserId: string
+): Promise<{ error?: string; success?: boolean; cleared?: number }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const currentUsers = await sql`
+    SELECT role
+    FROM profiles
+    WHERE id = ${userId}
+    LIMIT 1;
+  `;
+
+  if (!currentUsers || currentUsers[0]?.role !== "ADMIN") {
+    return { error: "Not authorized. Only administrators can clear a member's lockout." };
+  }
+
+  const targetRows = await sql`
+    SELECT email
+    FROM profiles
+    WHERE id = ${targetUserId}
+    LIMIT 1;
+  `;
+
+  const target = targetRows[0] as { email: string | null } | undefined;
+  if (!target) return { error: "Member not found." };
+  if (!target.email) return { error: "That member has no email address on file." };
+
+  const cleared = await clearAccountLimits(target.email);
+
+  revalidatePath("/team");
+  return { success: true, cleared };
 }
 
 export async function updateUserRoleAction(

@@ -73,6 +73,63 @@ export async function clearRateLimit(key: string): Promise<void> {
   }
 }
 
+/**
+ * Key prefixes for the per-account counters. Exported so the admin "unlock"
+ * clears exactly the keys sign-in registers — a mismatch here would silently
+ * fail to unblock someone.
+ */
+export const PASSWORD_KEY_PREFIX = "pw:";
+export const OTP_KEY_PREFIX = "otp:";
+export const OTP_REQUEST_KEY_PREFIX = "otpreq:";
+
+/** Every per-account key we may have recorded for an email. */
+export function accountLimitKeys(email: string): string[] {
+  const normalised = email.toLowerCase();
+  return [
+    `${PASSWORD_KEY_PREFIX}${normalised}`,
+    `${OTP_KEY_PREFIX}${normalised}`,
+    `${OTP_REQUEST_KEY_PREFIX}${normalised}`,
+  ];
+}
+
+/** Removes a member's per-account counters, e.g. to unblock them. Returns rows deleted. */
+export async function clearAccountLimits(email: string): Promise<number> {
+  const keys = accountLimitKeys(email);
+  try {
+    const rows = await sql`
+      DELETE FROM auth_rate_limits
+      WHERE key IN (${keys[0]}, ${keys[1]}, ${keys[2]})
+      RETURNING key;
+    `;
+    return rows.length;
+  } catch (err) {
+    console.error(`${LOG_PREFIX} clearAccountLimits failed:`, err);
+    return 0;
+  }
+}
+
+/** Recent per-account failure counts, keyed by rate-limit key, within the window. */
+export async function fetchRecentAccountAttempts(
+  windowSeconds: number
+): Promise<Map<string, number>> {
+  const attempts = new Map<string, number>();
+  try {
+    const rows = await sql`
+      SELECT key, attempts
+      FROM auth_rate_limits
+      WHERE window_start > now() - make_interval(secs => ${windowSeconds})
+        AND (key LIKE 'pw:%' OR key LIKE 'otp:%' OR key LIKE 'otpreq:%');
+    `;
+    for (const row of rows as { key: string; attempts: number }[]) {
+      attempts.set(row.key, row.attempts);
+    }
+  } catch (err) {
+    // Fail-open, like everything else here: a missing table must not break /team
+    console.error(`${LOG_PREFIX} fetchRecentAccountAttempts failed:`, err);
+  }
+  return attempts;
+}
+
 /** Message for a blocked attempt, in whole minutes. */
 export function tooManyAttemptsMessage(retryAfterSeconds?: number): string {
   const minutes = Math.max(1, Math.ceil((retryAfterSeconds ?? 60) / 60));

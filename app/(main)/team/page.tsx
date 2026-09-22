@@ -1,6 +1,10 @@
 import { sql, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { TeamMemberCard } from "@/components/TeamMemberCard";
+import { accountLimitKeys, fetchRecentAccountAttempts } from "@/lib/rateLimit";
+
+/** Keep in step with the rate-limit window in lib/actions/auth.ts */
+const SIGN_IN_WINDOW_SECONDS = 15 * 60;
 
 export default async function TeamPage() {
   const userId = await getCurrentUserId();
@@ -26,6 +30,13 @@ export default async function TeamPage() {
 
   const currentUserIsAdmin = currentUserRows[0]?.role === "ADMIN";
   const list = profiles ?? [];
+
+  // Recent failed sign-in attempts per member, so an admin can see who is throttled
+  const attemptRows = await fetchRecentAccountAttempts(SIGN_IN_WINDOW_SECONDS);
+  const lockoutAttemptsFor = (email: string | null): number => {
+    if (!email) return 0;
+    return Math.max(0, ...accountLimitKeys(email).map((key) => attemptRows.get(key) ?? 0));
+  };
 
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
@@ -81,6 +92,7 @@ export default async function TeamPage() {
             role={p.role}
             activeSessions={p.active_sessions}
             authProvider={p.auth_provider}
+            lockoutAttempts={lockoutAttemptsFor(p.email)}
             isCurrentUser={p.id === userId}
             currentUserIsAdmin={currentUserIsAdmin}
           />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateUserRoleAction, deleteMemberAction, resetMemberAccessAction } from "@/lib/actions/profile";
+import { updateUserRoleAction, deleteMemberAction, resetMemberAccessAction, clearMemberLockoutAction } from "@/lib/actions/profile";
 
 interface TeamMemberCardProps {
   id: string;
@@ -11,6 +11,7 @@ interface TeamMemberCardProps {
   role: "ADMIN" | "PLAYER";
   activeSessions: number;
   authProvider: "email" | "google";
+  lockoutAttempts: number;
   isCurrentUser: boolean;
   currentUserIsAdmin: boolean;
 }
@@ -22,6 +23,7 @@ export function TeamMemberCard({
   role,
   activeSessions,
   authProvider,
+  lockoutAttempts,
   isCurrentUser,
   currentUserIsAdmin,
 }: TeamMemberCardProps) {
@@ -36,6 +38,10 @@ export function TeamMemberCard({
   const [isDeleted, setIsDeleted] = useState(false);
 
   const [sessions, setSessions] = useState(activeSessions);
+  const [attempts, setAttempts] = useState(lockoutAttempts);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [lockoutDone, setLockoutDone] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -119,6 +125,23 @@ export function TeamMemberCard({
     setShowResetConfirm(false);
     setIsResetting(false);
     setResetDone(true);
+    router.refresh();
+  }
+
+  async function handleClearLockout() {
+    setIsUnlocking(true);
+    setUnlockError(null);
+
+    const result = await clearMemberLockoutAction(id);
+    setIsUnlocking(false);
+
+    if (result.error) {
+      setUnlockError(result.error);
+      return;
+    }
+
+    setAttempts(0);
+    setLockoutDone(true);
     router.refresh();
   }
 
@@ -217,6 +240,20 @@ export function TeamMemberCard({
                     ? `🔒 ${sessions} active login${sessions === 1 ? "" : "s"}`
                     : "🔒 No active logins"}
             </div>
+            {lockoutDone ? (
+              <div style={{ marginTop: 3, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5, color: "var(--in)" }}>
+                ✓ Lockout cleared — they can try again
+              </div>
+            ) : attempts > 0 ? (
+              <div style={{ marginTop: 3, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5, color: "var(--out)" }}>
+                ⏳ {attempts} failed sign-in attempt{attempts === 1 ? "" : "s"} in the last 15 minutes
+              </div>
+            ) : null}
+            {unlockError && (
+              <div role="alert" style={{ marginTop: 3, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5, color: "var(--out)" }}>
+                {unlockError}
+              </div>
+            )}
           </div>
         </div>
 
@@ -266,6 +303,34 @@ export function TeamMemberCard({
               >
                 {currentRole === "ADMIN" ? "Demote" : "+ Admin"}
               </button>
+
+              {attempts > 0 && (
+                <button
+                  onClick={handleClearLockout}
+                  disabled={isUnlocking || isLoading || isDeleting || isResetting}
+                  title={`Clear ${attempts} recent failed sign-in attempt${attempts === 1 ? "" : "s"}`}
+                  style={{
+                    height: 32,
+                    padding: "0 10px",
+                    borderRadius: "var(--r-sm)",
+                    border: "1px solid color-mix(in srgb, var(--maybe) 35%, transparent)",
+                    background: "color-mix(in srgb, var(--maybe) 12%, transparent)",
+                    color: "var(--maybe)",
+                    fontFamily: "var(--font-body)",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: (isUnlocking || isLoading || isDeleting || isResetting) ? "not-allowed" : "pointer",
+                    opacity: (isUnlocking || isLoading || isDeleting || isResetting) ? 0.5 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 5,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  🔓 <span>{isUnlocking ? "Unlocking…" : "Unlock"}</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setShowResetConfirm(true)}

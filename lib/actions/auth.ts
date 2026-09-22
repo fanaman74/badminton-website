@@ -13,6 +13,9 @@ import {
   clearRateLimit,
   tooManyAttemptsMessage,
   getClientIp,
+  PASSWORD_KEY_PREFIX,
+  OTP_KEY_PREFIX,
+  OTP_REQUEST_KEY_PREFIX,
 } from "@/lib/rateLimit";
 
 /** Shared window for every credential rate limit below */
@@ -65,7 +68,7 @@ export async function emailAuthAction(
   }
 
   // Throttle password guessing against a single account
-  const pwKey = `pw:${email}`;
+  const pwKey = `${PASSWORD_KEY_PREFIX}${email}`;
   const pwLimit = await checkRateLimit(pwKey, 10, AUTH_WINDOW_SECONDS);
   if (!pwLimit.allowed) {
     return { error: tooManyAttemptsMessage(pwLimit.retryAfterSeconds) };
@@ -156,7 +159,7 @@ export async function requestEmailOtpAction(
   }
 
   // Throttle code requests per address — otherwise the form can be used to spam a mailbox
-  const requestKey = `otpreq:${email}`;
+  const requestKey = `${OTP_REQUEST_KEY_PREFIX}${email}`;
   const requestLimit = await checkRateLimit(requestKey, 5, AUTH_WINDOW_SECONDS);
   if (!requestLimit.allowed) {
     return { error: tooManyAttemptsMessage(requestLimit.retryAfterSeconds) };
@@ -197,7 +200,7 @@ export async function verifyEmailOtpAction(
   }
 
   // Throttle code guessing (6 digits is only a million combinations)
-  const otpKey = `otp:${email}`;
+  const otpKey = `${OTP_KEY_PREFIX}${email}`;
   const otpLimit = await checkRateLimit(otpKey, 10, AUTH_WINDOW_SECONDS);
   if (!otpLimit.allowed) {
     return { error: tooManyAttemptsMessage(otpLimit.retryAfterSeconds) };
