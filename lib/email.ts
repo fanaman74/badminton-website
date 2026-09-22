@@ -21,10 +21,14 @@ function getResend() {
 }
 
 /**
- * Sender address. The default is on msoit.eu, the verified domain in the club's
- * Resend account, so emails are deliverable even with no extra configuration.
- * Override with RESEND_FROM_EMAIL to send from a different verified domain, e.g.
- * RESEND_FROM_EMAIL="VUB Smashers <notifications@vub-smashers.be>".
+ * Sender address: VUB Smashers <notifications@msoit.eu>.
+ *
+ * msoit.eu is the deliberate, permanent sender for this club — it is the verified
+ * domain in the club's Resend account, so mail is deliverable with no extra
+ * configuration. Members see msoit.eu as the sender; that is intended, so please
+ * do not "correct" it to another domain unless that domain is verified in Resend.
+ *
+ * RESEND_FROM_EMAIL overrides it, and only to another verified domain.
  */
 export function getFromAddress(): string {
   return process.env.RESEND_FROM_EMAIL?.trim() || "VUB Smashers <notifications@msoit.eu>";
