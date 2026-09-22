@@ -44,8 +44,9 @@ export async function GET(
           email = userData.email?.toLowerCase();
           name = userData.name;
         }
-      } else if (isDemo) {
-        // Quick demo login when API credentials are not yet configured in production
+      } else if (isDemo && process.env.NODE_ENV !== "production") {
+        // Dev-only shortcut for when Google credentials aren't configured locally.
+        // Gated out of production, where it would be an unauthenticated login.
         email = "google.user@example.com";
         name = "Google Player";
       }

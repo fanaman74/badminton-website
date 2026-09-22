@@ -10,12 +10,19 @@ import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
  *   scrypt$<N>$<salt-hex>$<hash-hex>
  */
 const SCRYPT_COST = 16384; // N — CPU/memory cost
+
+/**
+ * Node caps each scrypt call at 32 MB by default, which is only just above what
+ * N=16384 needs (128 * N * r = 16 MB). Raising the ceiling explicitly means the
+ * cost can be increased later without a confusing failure.
+ */
+const SCRYPT_MAXMEM = 64 * 1024 * 1024;
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(SALT_LENGTH);
-  const derived = scryptSync(password, salt, KEY_LENGTH, { N: SCRYPT_COST });
+  const derived = scryptSync(password, salt, KEY_LENGTH, { N: SCRYPT_COST, maxmem: SCRYPT_MAXMEM });
   return `scrypt$${SCRYPT_COST}$${salt.toString("hex")}$${derived.toString("hex")}`;
 }
 
@@ -34,7 +41,7 @@ export function verifyPassword(password: string, stored: string | null | undefin
   if (salt.length === 0 || expected.length === 0) return false;
 
   try {
-    const derived = scryptSync(password, salt, expected.length, { N: cost });
+    const derived = scryptSync(password, salt, expected.length, { N: cost, maxmem: SCRYPT_MAXMEM });
     return derived.length === expected.length && timingSafeEqual(derived, expected);
   } catch {
     return false;

@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { sql } from "@/lib/db";
 
 /**
@@ -76,4 +77,29 @@ export async function clearRateLimit(key: string): Promise<void> {
 export function tooManyAttemptsMessage(retryAfterSeconds?: number): string {
   const minutes = Math.max(1, Math.ceil((retryAfterSeconds ?? 60) / 60));
   return `Too many attempts. Please try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+}
+
+/**
+ * Best-effort client IP, for a second rate-limit dimension.
+ *
+ * Railway (like most hosts) sets x-forwarded-for; the first entry is the original
+ * client. Returns null when it cannot be determined, in which case the caller skips
+ * IP limiting rather than blocking anyone.
+ *
+ * Note on limits: a whole sports hall can share one egress IP, so the IP budget is
+ * deliberately generous — it exists to blunt distributed guessing, not to police
+ * individual members.
+ */
+export async function getClientIp(): Promise<string | null> {
+  try {
+    const store = await headers();
+    const forwarded = store.get("x-forwarded-for");
+    if (forwarded) {
+      const first = forwarded.split(",")[0]?.trim();
+      if (first) return first;
+    }
+    return store.get("x-real-ip")?.trim() || null;
+  } catch {
+    return null;
+  }
 }

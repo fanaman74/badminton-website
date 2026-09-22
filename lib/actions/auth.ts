@@ -12,6 +12,7 @@ import {
   registerAttempt,
   clearRateLimit,
   tooManyAttemptsMessage,
+  getClientIp,
 } from "@/lib/rateLimit";
 
 /** Shared window for every credential rate limit below */
@@ -70,6 +71,17 @@ export async function emailAuthAction(
     return { error: tooManyAttemptsMessage(pwLimit.retryAfterSeconds) };
   }
 
+  // …and a looser per-IP budget, so guessing spread across many accounts is still
+  // slowed down. Generous on purpose: a sports hall can share one egress IP.
+  const clientIp = await getClientIp();
+  const ipKey = clientIp ? `ip-pw:${clientIp}` : null;
+  if (ipKey) {
+    const ipLimit = await checkRateLimit(ipKey, 50, AUTH_WINDOW_SECONDS);
+    if (!ipLimit.allowed) {
+      return { error: tooManyAttemptsMessage(ipLimit.retryAfterSeconds) };
+    }
+  }
+
   const adminConfig = ADMIN_ACCOUNTS[email];
 
   // Look the member up once, so we have their stored hash to verify against
@@ -90,6 +102,7 @@ export async function emailAuthAction(
 
   if (!passwordMatches) {
     await registerAttempt(pwKey, AUTH_WINDOW_SECONDS);
+    if (ipKey) await registerAttempt(ipKey, AUTH_WINDOW_SECONDS);
     if (!existing?.password_hash && !adminConfig) {
       return {
         error:
@@ -112,14 +125,12 @@ export async function emailAuthAction(
       `;
     }
   } else {
-    // Only reachable for a designated admin email that has no profile yet, since
-    // everyone else needs an existing password to get this far
-    const playerName = name || (adminConfig ? adminConfig.name : email.split("@")[0]);
-    const role = adminConfig ? "ADMIN" : "PLAYER";
-
+    // Only reachable for a designated admin email that has no profile yet: everyone
+    // else needs an existing password to get this far, so this profile is always an admin.
+    const playerName = name || adminConfig?.name || email.split("@")[0];
     const insertRows = await sql`
       INSERT INTO profiles (name, email, role)
-      VALUES (${playerName}, ${email}, ${role})
+      VALUES (${playerName}, ${email}, 'ADMIN')
       RETURNING id;
     `;
     userId = insertRows[0]?.id as string;
@@ -192,6 +203,16 @@ export async function verifyEmailOtpAction(
     return { error: tooManyAttemptsMessage(otpLimit.retryAfterSeconds) };
   }
 
+  // Same idea per IP, for guessing spread across many addresses
+  const otpIp = await getClientIp();
+  const otpIpKey = otpIp ? `ip-otp:${otpIp}` : null;
+  if (otpIpKey) {
+    const ipLimit = await checkRateLimit(otpIpKey, 50, AUTH_WINDOW_SECONDS);
+    if (!ipLimit.allowed) {
+      return { error: tooManyAttemptsMessage(ipLimit.retryAfterSeconds) };
+    }
+  }
+
   // Find matching valid OTP
   const otpRows = await sql`
     SELECT id, email, code, name
@@ -205,6 +226,7 @@ export async function verifyEmailOtpAction(
 
   if (!otpRows || otpRows.length === 0) {
     await registerAttempt(otpKey, AUTH_WINDOW_SECONDS);
+    if (otpIpKey) await registerAttempt(otpIpKey, AUTH_WINDOW_SECONDS);
     return { error: "Invalid or expired verification code. Please check your email or request a new code." };
   }
 
