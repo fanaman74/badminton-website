@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import type { Session, RsvpStatus } from "@/types/database";
-import { SessionCard, type SessionPerson } from "@/components/SessionCard";
+import { SessionCard } from "@/components/SessionCard";
+import type { SessionPerson } from "@/components/GoingNames";
 
 interface SessionsListProps {
   sessions: Session[];

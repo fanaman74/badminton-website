@@ -1,10 +1,92 @@
 import { Resend } from "resend";
 
+/**
+ * Dashboards like Railway's happily keep a trailing newline or wrapping quotes
+ * around a pasted value, which makes an otherwise valid key fail auth — and then
+ * nothing at all reaches Resend. Strip them the same way lib/db.ts strips
+ * DATABASE_URL.
+ */
+function getApiKey(): string | null {
+  const raw = process.env.RESEND_API_KEY;
+  if (!raw) return null;
+  const key = raw.trim().replace(/^["']|["']$/g, "");
+  return key.length > 0 ? key : null;
+}
+
 // Lazily initialised so a missing key doesn't crash the module at import time
 function getResend() {
-  const key = process.env.RESEND_API_KEY;
+  const key = getApiKey();
   if (!key) return null;
   return new Resend(key);
+}
+
+/**
+ * Sender address. Override with RESEND_FROM_EMAIL to send from a verified domain,
+ * e.g. RESEND_FROM_EMAIL="VUB Smashers <notifications@vub-smashers.be>".
+ */
+export function getFromAddress(): string {
+  return process.env.RESEND_FROM_EMAIL?.trim() || "VUB Smashers <notifications@cordis-explorer.eu>";
+}
+
+function getSenderDomain(): string {
+  const match = getFromAddress().match(/@([^>\s]+)/);
+  return match ? match[1] : "";
+}
+
+/** Cheap summary of the email setup (no API call) — safe to expose on /api/health. */
+export function getEmailConfig() {
+  return {
+    configured: getApiKey() !== null,
+    from: getFromAddress(),
+    senderDomain: getSenderDomain(),
+    overriddenByEnv: Boolean(process.env.RESEND_FROM_EMAIL?.trim()),
+  };
+}
+
+/**
+ * Asks Resend whether the sender domain is verified. An unverified (or missing)
+ * domain is the usual reason a send is rejected and never shows in the dashboard.
+ */
+export async function checkSenderDomain(): Promise<{ ok: boolean; status?: string; error?: string }> {
+  const client = getResend();
+  if (!client) return { ok: false, error: "RESEND_API_KEY is not set in the running environment" };
+
+  const domain = getSenderDomain();
+  try {
+    const res = await client.domains.list();
+    if (res.error) return { ok: false, error: res.error.message };
+
+    const match = res.data.data.find((d) => d.name === domain);
+    if (!match) {
+      return { ok: false, error: `${domain} is not added to this Resend account` };
+    }
+    return { ok: match.status === "verified", status: match.status };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown Resend error" };
+  }
+}
+
+/** Sends a one-off test email and returns the raw Resend outcome, for diagnostics. */
+export async function sendTestEmail(
+  toEmail: string
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  const client = getResend();
+  if (!client) {
+    return { success: false, error: "RESEND_API_KEY is not set in the running environment" };
+  }
+
+  try {
+    const result = await client.emails.send({
+      from: getFromAddress(),
+      to: toEmail,
+      subject: "🏸 VUB Smashers test email",
+      html: "<p>This is a test email from the VUB Smashers app. If you are reading it, Resend is configured correctly.</p>",
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true, id: result.data?.id };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown Resend error" };
+  }
 }
 
 interface SessionEmailData {
@@ -190,7 +272,12 @@ function buildHtml(data: SessionEmailData): string {
 export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise<void> {
   const client = getResend();
   if (!client) {
-    console.warn("[email] RESEND_API_KEY not set — skipping email");
+    // Loud on purpose: without a key no confirmation email is ever delivered.
+    console.error(
+      "[email] RESEND_API_KEY is not set — RSVP confirmation email to",
+      data.toEmail,
+      "was NOT sent"
+    );
     return;
   }
 
@@ -198,7 +285,7 @@ export async function sendRsvpConfirmationEmail(data: SessionEmailData): Promise
 
   try {
     const result = await client.emails.send({
-      from: "VUB Smashers <notifications@cordis-explorer.eu>",
+      from: getFromAddress(),
       to: data.toEmail,
       subject: `${copy.subject} — ${formatDate(data.session.date)}`,
       html: buildHtml(data),
@@ -269,7 +356,7 @@ export async function sendOtpEmail(
 
   try {
     const result = await client.emails.send({
-      from: "VUB Smashers <notifications@cordis-explorer.eu>",
+      from: getFromAddress(),
       to: toEmail,
       subject: `🏸 Your verification code: ${code}`,
       html,
@@ -280,9 +367,9 @@ export async function sendOtpEmail(
       return { success: false, error: result.error.message };
     }
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[email] Failed to send OTP email:", err);
-    return { success: false, error: err?.message || "Failed to send email" };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to send email" };
   }
 }
 
@@ -379,7 +466,7 @@ export async function sendBatchRsvpConfirmationEmail({
 
   try {
     const result = await client.emails.send({
-      from: "VUB Smashers <notifications@cordis-explorer.eu>",
+      from: getFromAddress(),
       to: toEmail,
       subject: `🏸 You're confirmed for ${count} playing session${count > 1 ? "s" : ""}!`,
       html,
@@ -389,9 +476,9 @@ export async function sendBatchRsvpConfirmationEmail({
       return { success: false, error: result.error.message };
     }
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[email] Failed to send batch RSVP email:", err);
-    return { success: false, error: err?.message || "Failed to send email" };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to send email" };
   }
 }
 

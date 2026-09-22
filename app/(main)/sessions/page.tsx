@@ -3,7 +3,7 @@ import { sql, type Session, type RsvpStatus, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { HeroBanner } from "@/components/HeroBanner";
 import { SessionsList } from "@/components/SessionsList";
-import type { SessionPerson } from "@/components/SessionCard";
+import type { SessionPerson } from "@/components/GoingNames";
 import { RetryButton } from "@/components/RetryButton";
 
 export const dynamic = "force-dynamic";

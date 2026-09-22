@@ -101,6 +101,13 @@ Deployable to Railway, Vercel, or any Node.js hosting provider:
 > Without `RESEND_API_KEY`, email-code sign-in fails in production with
 > "Email service is not configured" rather than silently sending nothing.
 
+### Diagnosing email
+
+- `GET /api/health` — includes an `email` block (`configured`, `from`, `senderDomain`) with no API call.
+- `GET /api/health/email-test` — **admins only**: reports whether the sender domain is verified in Resend and sends a real test email to the signed-in admin, returning Resend's exact reply. It only ever mails the signed-in admin, so it cannot be abused as an open relay.
+
+If a send is rejected, the usual causes are a missing/blank `RESEND_API_KEY` (values pasted with a trailing newline or quotes are tolerated, they are stripped automatically) or a sender domain that is not verified in Resend — override the sender with `RESEND_FROM_EMAIL`.
+
 ## License
 
 MIT

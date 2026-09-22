@@ -3,6 +3,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { signOutAction } from "@/lib/actions/auth";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { YouMultiDateSelector } from "@/components/YouMultiDateSelector";
+import type { SessionPerson } from "@/components/GoingNames";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +28,14 @@ export default async function YouPage() {
     ORDER BY date ASC;
   `) as Session[];
 
+  // Who is going, so each date can list the players by name
   const inRsvps = (await sql`
-    SELECT session_id
-    FROM rsvps
-    WHERE status = 'IN';
-  `) as { session_id: string }[];
+    SELECT r.session_id, r.user_id, p.name
+    FROM rsvps r
+    JOIN profiles p ON r.user_id = p.id
+    WHERE r.status = 'IN'
+    ORDER BY r.created_at ASC;
+  `) as { session_id: string; user_id: string; name: string }[];
 
   const myRsvps = userId
     ? ((await sql`
@@ -43,6 +47,14 @@ export default async function YouPage() {
 
   const inCountBySession = inRsvps.reduce<Record<string, number>>(
     (acc, r) => ({ ...acc, [r.session_id]: (acc[r.session_id] ?? 0) + 1 }),
+    {}
+  );
+
+  const peopleBySession = inRsvps.reduce<Record<string, SessionPerson[]>>(
+    (acc, r) => ({
+      ...acc,
+      [r.session_id]: [...(acc[r.session_id] ?? []), { id: r.user_id, name: r.name }],
+    }),
     {}
   );
 
@@ -67,7 +79,7 @@ export default async function YouPage() {
         {/* Multi-Date Selector for quick joining & managing playing dates */}
         <section id="my-games" aria-labelledby="my-games-title">
           <h2 id="my-games-title" style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 8px" }}>My upcoming games</h2>
-          <YouMultiDateSelector key={JSON.stringify(myStatusBySession)} sessions={sessions} inCountBySession={inCountBySession} myStatusBySession={myStatusBySession} />
+          <YouMultiDateSelector key={JSON.stringify(myStatusBySession)} sessions={sessions} inCountBySession={inCountBySession} myStatusBySession={myStatusBySession} peopleBySession={peopleBySession} viewerId={userId} />
         </section>
 
         {/* Profile Settings */}

@@ -3,17 +3,22 @@
 import { useState, useTransition, useMemo } from "react";
 import type { Session, RsvpStatus } from "@/types/database";
 import { batchAcceptSessions, removeMyRsvpAction } from "@/lib/actions/rsvp";
+import { GoingNames, type SessionPerson } from "@/components/GoingNames";
 
 interface Props {
   sessions: Session[];
   inCountBySession: Record<string, number>;
   myStatusBySession: Record<string, RsvpStatus>;
+  peopleBySession: Record<string, SessionPerson[]>;
+  viewerId?: string | null;
 }
 
 export function YouMultiDateSelector({
   sessions,
   inCountBySession,
   myStatusBySession: initialStatuses,
+  peopleBySession,
+  viewerId,
 }: Props) {
   const [statuses, setStatuses] = useState<Record<string, RsvpStatus>>(initialStatuses);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -510,6 +515,7 @@ export function YouMultiDateSelector({
                   <span>·</span>
                   <span>{isFull ? "Full" : `${s.max_capacity - inCount} spots left`}</span>
                 </div>
+                <GoingNames people={peopleBySession[s.id] ?? []} viewerId={viewerId} />
               </div>
 
               {/* Status / Actions */}

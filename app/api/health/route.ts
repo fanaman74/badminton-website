@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { sql, isDatabaseConfigured } from "@/lib/db";
+import { getEmailConfig } from "@/lib/email";
 
 export async function GET() {
+  const email = getEmailConfig();
   const configured = isDatabaseConfigured();
   if (!configured) {
     return NextResponse.json(
@@ -9,6 +11,7 @@ export async function GET() {
         status: "error",
         databaseConfigured: false,
         message: "DATABASE_URL is not set in environment variables",
+        email,
       },
       { status: 500 }
     );
@@ -20,15 +23,17 @@ export async function GET() {
       status: "ok",
       databaseConfigured: true,
       databaseConnected: Boolean(result?.[0]?.connected === 1),
+      email,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         status: "error",
         databaseConfigured: true,
         databaseConnected: false,
-        error: error?.message || "Unknown database error",
+        error: error instanceof Error ? error.message : "Unknown database error",
+        email,
       },
       { status: 500 }
     );
