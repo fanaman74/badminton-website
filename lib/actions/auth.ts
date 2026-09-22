@@ -17,10 +17,9 @@ import {
   OTP_KEY_PREFIX,
   OTP_REQUEST_KEY_PREFIX,
 } from "@/lib/rateLimit";
-import { AUTH_LIMITS } from "@/lib/authLimits";
+import { getAuthLimits } from "@/lib/authLimits";
 
-/** Window shared by every credential rate limit — tunable via env, see lib/authLimits.ts */
-const AUTH_WINDOW_SECONDS = AUTH_LIMITS.windowSeconds;
+// Rate-limit values come from lib/authLimits.ts — env defaults plus any admin overrides
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -68,9 +67,12 @@ export async function emailAuthAction(
     return { error: "Enter your password, or request a login code by email." };
   }
 
+  // Effective limits: env defaults with any admin overrides from app_settings
+  const limits = await getAuthLimits();
+
   // Throttle password guessing against a single account
   const pwKey = `${PASSWORD_KEY_PREFIX}${email}`;
-  const pwLimit = await checkRateLimit(pwKey, AUTH_LIMITS.passwordAccount, AUTH_WINDOW_SECONDS);
+  const pwLimit = await checkRateLimit(pwKey, limits.passwordAccount, limits.windowSeconds);
   if (!pwLimit.allowed) {
     return { error: tooManyAttemptsMessage(pwLimit.retryAfterSeconds) };
   }
@@ -80,7 +82,7 @@ export async function emailAuthAction(
   const clientIp = await getClientIp();
   const ipKey = clientIp ? `ip-pw:${clientIp}` : null;
   if (ipKey) {
-    const ipLimit = await checkRateLimit(ipKey, AUTH_LIMITS.passwordIp, AUTH_WINDOW_SECONDS);
+    const ipLimit = await checkRateLimit(ipKey, limits.passwordIp, limits.windowSeconds);
     if (!ipLimit.allowed) {
       return { error: tooManyAttemptsMessage(ipLimit.retryAfterSeconds) };
     }
@@ -105,8 +107,8 @@ export async function emailAuthAction(
     (adminConfig ? verifyAdminPassword(password).ok : false);
 
   if (!passwordMatches) {
-    await registerAttempt(pwKey, AUTH_WINDOW_SECONDS);
-    if (ipKey) await registerAttempt(ipKey, AUTH_WINDOW_SECONDS);
+    await registerAttempt(pwKey, limits.windowSeconds);
+    if (ipKey) await registerAttempt(ipKey, limits.windowSeconds);
     if (!existing?.password_hash && !adminConfig) {
       return {
         error:
@@ -159,13 +161,15 @@ export async function requestEmailOtpAction(
     return { error: "Please enter a valid email address." };
   }
 
+  const limits = await getAuthLimits();
+
   // Throttle code requests per address — otherwise the form can be used to spam a mailbox
   const requestKey = `${OTP_REQUEST_KEY_PREFIX}${email}`;
-  const requestLimit = await checkRateLimit(requestKey, AUTH_LIMITS.otpRequestsAccount, AUTH_WINDOW_SECONDS);
+  const requestLimit = await checkRateLimit(requestKey, limits.otpRequestsAccount, limits.windowSeconds);
   if (!requestLimit.allowed) {
     return { error: tooManyAttemptsMessage(requestLimit.retryAfterSeconds) };
   }
-  await registerAttempt(requestKey, AUTH_WINDOW_SECONDS);
+  await registerAttempt(requestKey, limits.windowSeconds);
 
   // Generate 6-digit random code
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -200,9 +204,11 @@ export async function verifyEmailOtpAction(
     return { error: "Email and verification code are required." };
   }
 
+  const limits = await getAuthLimits();
+
   // Throttle code guessing (6 digits is only a million combinations)
   const otpKey = `${OTP_KEY_PREFIX}${email}`;
-  const otpLimit = await checkRateLimit(otpKey, AUTH_LIMITS.otpAccount, AUTH_WINDOW_SECONDS);
+  const otpLimit = await checkRateLimit(otpKey, limits.otpAccount, limits.windowSeconds);
   if (!otpLimit.allowed) {
     return { error: tooManyAttemptsMessage(otpLimit.retryAfterSeconds) };
   }
@@ -211,7 +217,7 @@ export async function verifyEmailOtpAction(
   const otpIp = await getClientIp();
   const otpIpKey = otpIp ? `ip-otp:${otpIp}` : null;
   if (otpIpKey) {
-    const ipLimit = await checkRateLimit(otpIpKey, AUTH_LIMITS.otpIp, AUTH_WINDOW_SECONDS);
+    const ipLimit = await checkRateLimit(otpIpKey, limits.otpIp, limits.windowSeconds);
     if (!ipLimit.allowed) {
       return { error: tooManyAttemptsMessage(ipLimit.retryAfterSeconds) };
     }
@@ -229,8 +235,8 @@ export async function verifyEmailOtpAction(
   `;
 
   if (!otpRows || otpRows.length === 0) {
-    await registerAttempt(otpKey, AUTH_WINDOW_SECONDS);
-    if (otpIpKey) await registerAttempt(otpIpKey, AUTH_WINDOW_SECONDS);
+    await registerAttempt(otpKey, limits.windowSeconds);
+    if (otpIpKey) await registerAttempt(otpIpKey, limits.windowSeconds);
     return { error: "Invalid or expired verification code. Please check your email or request a new code." };
   }
 

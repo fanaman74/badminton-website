@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { resetAuthLimits, saveAuthLimits } from "@/lib/authLimits";
 
 export async function saveTeamConfigAction(
   _prevState: { error?: string; success?: boolean } | undefined,
@@ -36,6 +37,36 @@ export async function saveTeamConfigAction(
 
   revalidatePath("/admin/config");
   revalidatePath("/admin/sessions/new");
+  return { success: true };
+}
+
+/**
+ * Saves the sign-in rate limits from the admin console. Values are validated and
+ * clamped in saveAuthLimits, which also clears its read cache so the change applies
+ * to the very next sign-in attempt (no redeploy needed).
+ */
+export async function saveRateLimitsAction(
+  values: Record<string, number>
+): Promise<{ error?: string; success?: boolean }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") return { error: "Not authorized." };
+
+  const saved = await saveAuthLimits(values);
+  if (saved.error) return saved;
+
+  revalidatePath("/admin/config");
+  return { success: true };
+}
+
+/** Clears the overrides, so the env/built-in defaults apply again. */
+export async function resetRateLimitsAction(): Promise<{ error?: string; success?: boolean }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") return { error: "Not authorized." };
+
+  const reset = await resetAuthLimits();
+  if (reset.error) return reset;
+
+  revalidatePath("/admin/config");
   return { success: true };
 }
 
