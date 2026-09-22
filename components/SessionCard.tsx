@@ -8,6 +8,11 @@ import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { updateRsvp } from "@/lib/actions/rsvp";
 import { AuthModal } from "@/components/AuthModal";
 
+export interface SessionPerson {
+  id: string;
+  name: string;
+}
+
 interface Props {
   session: Session;
   inCount: number;
@@ -15,6 +20,10 @@ interface Props {
   isHero?: boolean;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
+  /** Members confirmed for this session (IN), in join order. */
+  people?: SessionPerson[];
+  /** The signed-in member, so they show up as "You" and appear as soon as they join. */
+  viewer?: SessionPerson | null;
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
@@ -61,6 +70,78 @@ function ClockIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+const MAX_NAMES_SHOWN = 8;
+
+function initialsOf(name: string) {
+  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function avatarColor(id: string) {
+  return `hsl(${(id.charCodeAt(0) * 47) % 360}, 60%, 55%)`;
+}
+
+/** Names of the members who are going, under the session details. */
+function GoingNames({ people, viewerId }: { people: SessionPerson[]; viewerId?: string | null }) {
+  if (people.length === 0) return null;
+
+  const label = (p: SessionPerson) => (viewerId && p.id === viewerId ? "You" : p.name);
+  const shown = people.slice(0, MAX_NAMES_SHOWN);
+  const hiddenCount = people.length - shown.length;
+
+  return (
+    <div
+      role="list"
+      aria-label={`Going: ${people.map(label).join(", ")}`}
+      style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 9 }}
+    >
+      {shown.map((p) => {
+        const isYou = Boolean(viewerId) && p.id === viewerId;
+        return (
+          <span
+            key={p.id}
+            role="listitem"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "2px 9px 2px 2px", borderRadius: 999,
+              background: "var(--surface-2)", border: "1px solid var(--line)",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                background: avatarColor(p.id), color: "#fff",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 9.5,
+              }}
+            >
+              {initialsOf(p.name)}
+            </span>
+            <span style={{
+              fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
+              color: isYou ? "var(--brand)" : "var(--ink)",
+            }}>
+              {isYou ? "You" : p.name.split(" ")[0]}
+            </span>
+          </span>
+        );
+      })}
+      {hiddenCount > 0 && (
+        <span
+          role="listitem"
+          style={{
+            display: "inline-flex", alignItems: "center", padding: "4px 9px",
+            borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--line)",
+            fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5, color: "var(--muted)",
+          }}
+        >
+          +{hiddenCount} more
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function SessionCard({
   session,
   inCount: initialInCount,
@@ -68,9 +149,12 @@ export function SessionCard({
   isHero,
   isAdmin,
   isAuthenticated = false,
+  people: initialPeople = [],
+  viewer,
 }: Props) {
   const [status, setStatus] = useState<RsvpStatus | null>(userStatus);
   const [inCount, setInCount] = useState<number>(initialInCount);
+  const [people, setPeople] = useState<SessionPerson[]>(initialPeople);
   const [isPending, startTransition] = useTransition();
   const [authOpen, setAuthOpen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -96,7 +180,16 @@ export function SessionCard({
         const prev = status;
         const res = await updateRsvp(session.id, "IN");
         if (res.error) { setFeedback(res.error); return; }
-        if (res.status) { setStatus(res.status); if (prev !== "IN" && res.status === "IN") setInCount((c) => c + 1); }
+        if (!res.status) return;
+
+        setStatus(res.status);
+        if (prev !== "IN" && res.status === "IN") {
+          setInCount((c) => c + 1);
+          // List the member's own name straight away, without a page refresh
+          if (viewer) {
+            setPeople((list) => (list.some((p) => p.id === viewer.id) ? list : [...list, viewer]));
+          }
+        }
       } catch { setFeedback("We couldn’t save your response. Please try again."); }
     });
   }
@@ -163,44 +256,49 @@ export function SessionCard({
               </div>
             </div>
           </div>
-          <div style={{ padding: "13px 18px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 2 }}>
-            <div style={{ pointerEvents: "none" }}>
-              <CourtMeter session={session} confirmedCount={inCount} compact />
+          <div style={{ padding: "13px 18px 15px", position: "relative", zIndex: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, position: "relative" }}>
+              <div style={{ pointerEvents: "none" }}>
+                <CourtMeter session={session} confirmedCount={inCount} compact />
+              </div>
+              {feedback && <div role="alert" style={{ position: "absolute", bottom: 52, left: 18, right: 18, color: "var(--out)", background: "var(--surface)", padding: "6px 8px", borderRadius: 6, fontSize: 12, pointerEvents: "auto" }}>{feedback}</div>}
+              {status === "IN" || status === "WAITLIST" ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px",
+                  borderRadius: 999, background: `color-mix(in srgb, ${status === "WAITLIST" ? "var(--maybe)" : "var(--in)"} 16%, transparent)`,
+                  color: status === "WAITLIST" ? "var(--maybe)" : "var(--in)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13 }}>
+                  {status === "WAITLIST" ? "You’re on the waitlist" : "You’re going ✓"}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleQuickAccept}
+                  disabled={isPending}
+                  style={{
+                    pointerEvents: "auto",
+                    border: "none",
+                    cursor: "pointer",
+                    background: full ? "var(--maybe)" : "var(--in)",
+                    color: "#fff",
+                    borderRadius: "var(--r-md)",
+                    padding: "8px 18px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 800,
+                    fontSize: 14,
+                    boxShadow: full ? "0 4px 14px -4px var(--maybe)" : "0 4px 14px -4px var(--in)",
+                    transition: "all .18s ease",
+                    opacity: isPending ? 0.7 : 1,
+                  }}
+                >
+                  <span>{isPending ? "Saving…" : (full ? "Join waitlist" : "Join session")}</span>
+                </button>
+              )}
             </div>
-            {feedback && <div role="alert" style={{ position: "absolute", bottom: 52, left: 18, right: 18, color: "var(--out)", background: "var(--surface)", padding: "6px 8px", borderRadius: 6, fontSize: 12, pointerEvents: "auto" }}>{feedback}</div>}
-            {status === "IN" || status === "WAITLIST" ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px",
-                borderRadius: 999, background: `color-mix(in srgb, ${status === "WAITLIST" ? "var(--maybe)" : "var(--in)"} 16%, transparent)`,
-                color: status === "WAITLIST" ? "var(--maybe)" : "var(--in)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13 }}>
-                {status === "WAITLIST" ? "You’re on the waitlist" : "You’re going ✓"}
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={handleQuickAccept}
-                disabled={isPending}
-                style={{
-                  pointerEvents: "auto",
-                  border: "none",
-                  cursor: "pointer",
-                  background: full ? "var(--maybe)" : "var(--in)",
-                  color: "#fff",
-                  borderRadius: "var(--r-md)",
-                  padding: "8px 18px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  boxShadow: full ? "0 4px 14px -4px var(--maybe)" : "0 4px 14px -4px var(--in)",
-                  transition: "all .18s ease",
-                  opacity: isPending ? 0.7 : 1,
-                }}
-              >
-                <span>{isPending ? "Saving…" : (full ? "Join waitlist" : "Join session")}</span>
-              </button>
-            )}
+            <div style={{ pointerEvents: "none" }}>
+              <GoingNames people={people} viewerId={viewer?.id} />
+            </div>
           </div>
         </div>
         <AuthModal
@@ -313,6 +411,9 @@ export function SessionCard({
               {status === "WAITLIST" ? "View position →" : "View details →"}
             </span>
           )}
+        </div>
+        <div style={{ pointerEvents: "none", position: "relative", zIndex: 2 }}>
+          <GoingNames people={people} viewerId={viewer?.id} />
         </div>
       </div>
       <AuthModal

@@ -3,6 +3,7 @@ import { sql, type Session, type RsvpStatus, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { HeroBanner } from "@/components/HeroBanner";
 import { SessionsList } from "@/components/SessionsList";
+import type { SessionPerson } from "@/components/SessionCard";
 import { RetryButton } from "@/components/RetryButton";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export default async function SessionsPage() {
   let userId: string | null = null;
   let sessions: Session[] = [];
   let profile: Pick<Profile, "name" | "role"> | undefined;
-  let inRsvps: { session_id: string }[] = [];
+  let inRsvps: { session_id: string; user_id: string; name: string }[] = [];
   let myRsvps: { session_id: string; status: RsvpStatus }[] = [];
   let memberCount = 0;
   let dbError: string | null = null;
@@ -36,11 +37,14 @@ export default async function SessionsPage() {
       : [];
     profile = profileRows[0];
 
+    // Who is going, so every card can list the players by name
     inRsvps = (await sql`
-      SELECT session_id
-      FROM rsvps
-      WHERE status = 'IN';
-    `) as { session_id: string }[];
+      SELECT r.session_id, r.user_id, p.name
+      FROM rsvps r
+      JOIN profiles p ON r.user_id = p.id
+      WHERE r.status = 'IN'
+      ORDER BY r.created_at ASC;
+    `) as { session_id: string; user_id: string; name: string }[];
 
     myRsvps = userId
       ? ((await sql`
@@ -127,6 +131,17 @@ export default async function SessionsPage() {
     {}
   );
 
+  const peopleBySession = (inRsvps ?? []).reduce<Record<string, SessionPerson[]>>(
+    (acc, r) => ({
+      ...acc,
+      [r.session_id]: [...(acc[r.session_id] ?? []), { id: r.user_id, name: r.name }],
+    }),
+    {}
+  );
+
+  const viewer: SessionPerson | null =
+    userId && profile?.name ? { id: userId, name: profile.name } : null;
+
   const myStatusBySession = (myRsvps ?? []).reduce<Record<string, RsvpStatus>>(
     (acc, r) => ({ ...acc, [r.session_id]: r.status }),
     {}
@@ -169,7 +184,7 @@ export default async function SessionsPage() {
       </div>
 
       <div className="page-shell content-grid">
-        <div><SessionsList sessions={list} inCountBySession={inCountBySession} myStatusBySession={myStatusBySession} isAdmin={isAdmin} isAuthenticated={!!userId} /></div>
+        <div><SessionsList sessions={list} inCountBySession={inCountBySession} myStatusBySession={myStatusBySession} peopleBySession={peopleBySession} viewer={viewer} isAdmin={isAdmin} isAuthenticated={!!userId} /></div>
         <aside className="club-info-card" aria-labelledby="club-info-title">
           <p className="eyebrow" style={{ marginBottom: 6 }}>About the club</p>
           <h2 id="club-info-title" style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 22 }}>Play together</h2>

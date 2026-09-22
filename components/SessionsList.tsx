@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from "react";
 import type { Session, RsvpStatus } from "@/types/database";
-import { SessionCard } from "@/components/SessionCard";
+import { SessionCard, type SessionPerson } from "@/components/SessionCard";
 
 interface SessionsListProps {
   sessions: Session[];
   inCountBySession: Record<string, number>;
   myStatusBySession: Record<string, RsvpStatus>;
+  peopleBySession: Record<string, SessionPerson[]>;
+  viewer?: SessionPerson | null;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
 }
@@ -16,6 +18,8 @@ export function SessionsList({
   sessions,
   inCountBySession,
   myStatusBySession,
+  peopleBySession,
+  viewer,
   isAdmin,
   isAuthenticated,
 }: SessionsListProps) {
@@ -206,6 +210,8 @@ export function SessionsList({
             userStatus={myStatusBySession[heroSession.id] ?? null}
             isAdmin={isAdmin}
             isAuthenticated={isAuthenticated}
+            people={peopleBySession[heroSession.id] ?? []}
+            viewer={viewer}
             isHero
           />
         </div>
@@ -269,6 +275,8 @@ export function SessionsList({
               userStatus={myStatusBySession[session.id] ?? null}
               isAdmin={isAdmin}
               isAuthenticated={isAuthenticated}
+              people={peopleBySession[session.id] ?? []}
+              viewer={viewer}
             />
           ))}
         </div>
