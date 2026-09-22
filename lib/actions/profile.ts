@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentUserId, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { checkPasswordStrength, hashPassword, verifyPassword } from "@/lib/passwords";
 
 export async function updateProfileAction(
@@ -119,6 +120,19 @@ export async function setPasswordAction(
       SET password_hash = ${hashPassword(newPassword)}, auth_provider = 'email'
       WHERE id = ${userId};
     `;
+
+    // Sign every other device out: a new password shouldn't leave old sessions alive.
+    // The device making the change keeps working.
+    const cookieStore = await cookies();
+    const currentToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (currentToken) {
+      await sql`
+        DELETE FROM user_sessions
+        WHERE user_id = ${userId} AND token <> ${currentToken};
+      `;
+    } else {
+      await sql`DELETE FROM user_sessions WHERE user_id = ${userId};`;
+    }
   } catch (err) {
     console.error("[setPasswordAction] Failed to save password:", err);
     return { error: "Could not save your password. Please try again." };
@@ -165,9 +179,14 @@ export async function updateUserRoleAction(
 /**
  * Ends every active login for a member and voids any login code still in flight.
  *
- * Non-destructive: the member's profile, RSVPs and stats are untouched — their
- * session cookie simply stops resolving, so they must request a fresh emailed
- * code. Useful when someone lost a device, shared a link or can't get in.
+ * Non-destructive to their data: the member's profile, RSVPs and stats are
+ * untouched — their session cookie simply stops resolving, so they must sign in
+ * again (with a fresh emailed code, or with Google if that is how they sign in).
+ *
+ * For members who sign in locally it also clears their password, which is what
+ * makes this a genuine password reset. Google members have no local password, so
+ * only their sessions are ended — that is still useful for kicking a compromised
+ * Google session.
  */
 export async function resetMemberAccessAction(
   targetUserId: string
@@ -201,26 +220,21 @@ export async function resetMemberAccessAction(
     return { error: "Member not found." };
   }
 
-  // Google/SSO members have no local login to reset — they authenticate with Google
-  if (target.auth_provider === "google") {
-    return {
-      error: "This member signs in with Google, so there is no local access to reset.",
-    };
-  }
-
+  // End every one of their logins — the cookie stops resolving on the next request
   const ended = await sql`
     DELETE FROM user_sessions
     WHERE user_id = ${targetUserId}
     RETURNING id;
   `;
 
-  // A stored password would let them straight back in, so clear it too — this is
-  // what makes it a real reset: they sign in with a fresh code and set a new one.
-  await sql`
-    UPDATE profiles
-    SET password_hash = NULL
-    WHERE id = ${targetUserId} AND password_hash IS NOT NULL;
-  `;
+  // Google/SSO members have no local password, so only their sessions are ended
+  if (target.auth_provider !== "google") {
+    await sql`
+      UPDATE profiles
+      SET password_hash = NULL
+      WHERE id = ${targetUserId} AND password_hash IS NOT NULL;
+    `;
+  }
 
   // Any code already emailed becomes useless, so they ask for a new one
   if (target.email) {

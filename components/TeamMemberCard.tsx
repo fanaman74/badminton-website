@@ -203,10 +203,16 @@ export function TeamMemberCard({
                 color: resetDone ? "var(--in)" : sessions > 0 ? "var(--muted)" : "var(--faint)",
               }}
             >
-              {authProvider === "google"
-                ? "🌐 Signs in with Google — no local access to reset"
-                : resetDone
-                  ? "✓ Access reset — they must request a new code"
+              {resetDone
+                ? authProvider === "google"
+                  ? "✓ Signed out everywhere — they sign in with Google again"
+                  : "✓ Access reset — they must sign in with a fresh code"
+                : authProvider === "google"
+                  ? `🌐 Signs in with Google${
+                      sessions > 0
+                        ? ` · 🔒 ${sessions} active login${sessions === 1 ? "" : "s"}`
+                        : ""
+                    }`
                   : sessions > 0
                     ? `🔒 ${sessions} active login${sessions === 1 ? "" : "s"}`
                     : "🔒 No active logins"}
@@ -261,37 +267,37 @@ export function TeamMemberCard({
                 {currentRole === "ADMIN" ? "Demote" : "+ Admin"}
               </button>
 
-              {authProvider !== "google" && (
-                <button
-                  onClick={() => setShowResetConfirm(true)}
-                  disabled={isLoading || isDeleting || isResetting || sessions === 0}
-                  title={
-                    sessions === 0
-                      ? "No active logins to reset"
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                disabled={isLoading || isDeleting || isResetting || sessions === 0}
+                title={
+                  sessions === 0
+                    ? "No active logins to reset"
+                    : authProvider === "google"
+                      ? `Sign ${name} out of every device (they sign in with Google)`
                       : `Reset access — sign ${name} out of every device`
-                  }
-                  style={{
-                    height: 32,
-                    padding: "0 10px",
-                    borderRadius: "var(--r-sm)",
-                    border: "1px solid var(--line)",
-                    background: "var(--surface-2)",
-                    color: sessions === 0 ? "var(--faint)" : "var(--brand)",
-                    fontFamily: "var(--font-body)",
-                    fontWeight: 700,
-                    fontSize: 12,
-                    cursor: (isLoading || isDeleting || isResetting || sessions === 0) ? "not-allowed" : "pointer",
-                    opacity: (isLoading || isDeleting || isResetting || sessions === 0) ? 0.5 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 5,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  🔑 <span>Reset access</span>
-                </button>
-              )}
+                }
+                style={{
+                  height: 32,
+                  padding: "0 10px",
+                  borderRadius: "var(--r-sm)",
+                  border: "1px solid var(--line)",
+                  background: "var(--surface-2)",
+                  color: sessions === 0 ? "var(--faint)" : "var(--brand)",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: (isLoading || isDeleting || isResetting || sessions === 0) ? "not-allowed" : "pointer",
+                  opacity: (isLoading || isDeleting || isResetting || sessions === 0) ? 0.5 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🔑 <span>{authProvider === "google" ? "Sign out" : "Reset access"}</span>
+              </button>
 
               {!isProtectedAdmin && (
                 <button
@@ -396,10 +402,20 @@ export function TeamMemberCard({
                 lineHeight: 1.5,
               }}
             >
-              This signs <strong>{name}</strong> out of every device ({sessions} active login
-              {sessions === 1 ? "" : "s"}) and cancels any login code already sent. Players sign in
-              with an emailed code rather than a password, so this is what a password reset does for
-              them — their RSVPs, profile and stats are untouched and they simply request a new code.
+              {authProvider === "google" ? (
+                <>
+                  This signs <strong>{name}</strong> out of every device ({sessions} active login
+                  {sessions === 1 ? "" : "s"}). They sign in with Google, so there is no password to
+                  reset — they simply sign in with Google again. Their data is untouched.
+                </>
+              ) : (
+                <>
+                  This signs <strong>{name}</strong> out of every device ({sessions} active login
+                  {sessions === 1 ? "" : "s"}), cancels any login code already sent and clears their
+                  password. Their RSVPs, profile and stats are untouched — they sign in with a fresh
+                  code and can set a new password.
+                </>
+              )}
             </p>
             {resetError && (
               <div

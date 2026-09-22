@@ -59,6 +59,20 @@ async function migrate() {
   `;
   console.log("  ✓ Ensured profiles.password_hash");
 
+  // Rate limiting for the credential entry points — see lib/rateLimit.ts
+  await sql`
+    CREATE TABLE IF NOT EXISTS auth_rate_limits (
+      key TEXT PRIMARY KEY,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      window_start TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS auth_rate_limits_window_start_idx
+    ON auth_rate_limits (window_start)
+  `;
+  console.log("  ✓ Ensured auth_rate_limits table");
+
   await sql`
     CREATE TABLE IF NOT EXISTS user_sessions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

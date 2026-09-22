@@ -9,7 +9,8 @@ A mobile-first web app to manage your badminton team: schedule sessions, track R
 - **Court Calculator**: Interactive court visualizer (`CourtMeter`) showing capacity based on confirmed players.
 - **Player Lists & Admin Notes**: See who is going, waitlisted, or tentative, plus pin admin notices.
 - **Email Notifications**: Confirmation emails via Resend when RSVPs are updated or waitlist promotions occur, with a per-member on/off toggle in the profile section (login codes are always sent).
-- **Admin Controls**: Create and edit sessions, configure weekly court defaults, and manage player roles.
+- **Sign-in**: emailed one-time codes, or a password you set yourself in your profile (scrypt-hashed). Password and code attempts are rate limited per account.
+- **Admin Controls**: Create and edit sessions, configure weekly court defaults, manage player roles, and reset a member's access — which ends their logins and clears their password.
 
 ## Tech Stack
 

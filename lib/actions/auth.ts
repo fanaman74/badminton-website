@@ -7,6 +7,15 @@ import { generateSessionToken } from "@/lib/auth";
 import { sendOtpEmail } from "@/lib/email";
 import { ADMIN_ACCOUNTS, verifyAdminPassword } from "@/lib/admin";
 import { verifyPassword } from "@/lib/passwords";
+import {
+  checkRateLimit,
+  registerAttempt,
+  clearRateLimit,
+  tooManyAttemptsMessage,
+} from "@/lib/rateLimit";
+
+/** Shared window for every credential rate limit below */
+const AUTH_WINDOW_SECONDS = 15 * 60;
 
 const SESSION_COOKIE_NAME = "badminton_session";
 
@@ -54,6 +63,13 @@ export async function emailAuthAction(
     return { error: "Enter your password, or request a login code by email." };
   }
 
+  // Throttle password guessing against a single account
+  const pwKey = `pw:${email}`;
+  const pwLimit = await checkRateLimit(pwKey, 10, AUTH_WINDOW_SECONDS);
+  if (!pwLimit.allowed) {
+    return { error: tooManyAttemptsMessage(pwLimit.retryAfterSeconds) };
+  }
+
   const adminConfig = ADMIN_ACCOUNTS[email];
 
   // Look the member up once, so we have their stored hash to verify against
@@ -73,6 +89,7 @@ export async function emailAuthAction(
     (adminConfig ? verifyAdminPassword(password).ok : false);
 
   if (!passwordMatches) {
+    await registerAttempt(pwKey, AUTH_WINDOW_SECONDS);
     if (!existing?.password_hash && !adminConfig) {
       return {
         error:
@@ -108,6 +125,8 @@ export async function emailAuthAction(
     userId = insertRows[0]?.id as string;
   }
 
+  await clearRateLimit(pwKey);
+
   // Local sign-in (emailed code / admin password) — access resets apply to them
   await sql`UPDATE profiles SET auth_provider = 'email' WHERE id = ${userId} AND auth_provider <> 'email';`;
 
@@ -124,6 +143,14 @@ export async function requestEmailOtpAction(
   if (!email || !email.includes("@")) {
     return { error: "Please enter a valid email address." };
   }
+
+  // Throttle code requests per address — otherwise the form can be used to spam a mailbox
+  const requestKey = `otpreq:${email}`;
+  const requestLimit = await checkRateLimit(requestKey, 5, AUTH_WINDOW_SECONDS);
+  if (!requestLimit.allowed) {
+    return { error: tooManyAttemptsMessage(requestLimit.retryAfterSeconds) };
+  }
+  await registerAttempt(requestKey, AUTH_WINDOW_SECONDS);
 
   // Generate 6-digit random code
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -158,6 +185,13 @@ export async function verifyEmailOtpAction(
     return { error: "Email and verification code are required." };
   }
 
+  // Throttle code guessing (6 digits is only a million combinations)
+  const otpKey = `otp:${email}`;
+  const otpLimit = await checkRateLimit(otpKey, 10, AUTH_WINDOW_SECONDS);
+  if (!otpLimit.allowed) {
+    return { error: tooManyAttemptsMessage(otpLimit.retryAfterSeconds) };
+  }
+
   // Find matching valid OTP
   const otpRows = await sql`
     SELECT id, email, code, name
@@ -170,10 +204,14 @@ export async function verifyEmailOtpAction(
   `;
 
   if (!otpRows || otpRows.length === 0) {
+    await registerAttempt(otpKey, AUTH_WINDOW_SECONDS);
     return { error: "Invalid or expired verification code. Please check your email or request a new code." };
   }
 
   const savedName = otpRows[0].name as string | null;
+
+  // Correct code: clear the throttle and consume it
+  await clearRateLimit(otpKey);
 
   // Delete used OTP
   await sql`DELETE FROM email_otps WHERE LOWER(email) = ${email};`;

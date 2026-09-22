@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { sql, type Profile } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
-const SESSION_COOKIE_NAME = "badminton_session";
+export const SESSION_COOKIE_NAME = "badminton_session";
 
 export async function getCurrentUserId(): Promise<string | null> {
   const cookieStore = await cookies();
