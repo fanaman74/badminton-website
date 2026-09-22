@@ -23,7 +23,7 @@ export default async function YouPage() {
   const sessions = (await sql`
     SELECT *
     FROM sessions
-    WHERE status = 'UPCOMING'
+    WHERE status = 'UPCOMING' AND date >= ((CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date AT TIME ZONE 'UTC')
     ORDER BY date ASC;
   `) as Session[];
 
@@ -54,7 +54,7 @@ export default async function YouPage() {
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
       {/* Header */}
-      <div style={{ padding: "48px 20px 14px" }}>
+      <div className="page-shell" style={{ paddingTop: 28, paddingBottom: 14 }}>
         <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 11.5,
           letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brand)", marginBottom: 5 }}>
           VUB Smashers
@@ -63,21 +63,18 @@ export default async function YouPage() {
           lineHeight: 1, letterSpacing: "-0.02em", color: "var(--ink)" }}>You</div>
       </div>
 
-      <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 20, paddingBottom: 140 }}>
+      <div className="page-shell" style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 140 }}>
         {/* Multi-Date Selector for quick joining & managing playing dates */}
-        <YouMultiDateSelector
-          sessions={sessions}
-          inCountBySession={inCountBySession}
-          myStatusBySession={myStatusBySession}
-        />
+        <section id="my-games" aria-labelledby="my-games-title">
+          <h2 id="my-games-title" style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 8px" }}>My upcoming games</h2>
+          <YouMultiDateSelector key={JSON.stringify(myStatusBySession)} sessions={sessions} inCountBySession={inCountBySession} myStatusBySession={myStatusBySession} />
+        </section>
 
         {/* Profile Settings */}
-        <ProfileEditForm
-          name={profile?.name || ""}
-          email={profile?.email || ""}
-          userId={userId!}
-          isAdmin={profile?.role === "ADMIN"}
-        />
+        <section id="profile" aria-labelledby="profile-title">
+          <h2 id="profile-title" style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 8px" }}>Profile</h2>
+          <ProfileEditForm name={profile?.name || ""} email={profile?.email || ""} userId={userId!} isAdmin={profile?.role === "ADMIN"} />
+        </section>
 
         {/* Sign out */}
         <form action={signOutAction}>

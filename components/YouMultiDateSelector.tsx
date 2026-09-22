@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
-import Link from "next/link";
 import type { Session, RsvpStatus } from "@/types/database";
 import { batchAcceptSessions, removeMyRsvpAction } from "@/lib/actions/rsvp";
 
@@ -103,23 +102,25 @@ export function YouMultiDateSelector({
     const idsToAccept = Array.from(selectedIds);
 
     startTransition(async () => {
-      const result = await batchAcceptSessions(idsToAccept);
-      if (result.success) {
+      try {
+        const result = await batchAcceptSessions(idsToAccept);
+        if (result.success && result.count > 0) {
         setStatuses((prev) => ({
           ...prev,
           ...(result.statuses || {}),
         }));
         setFeedback({
           type: "success",
-          message: `🎉 Success! You have been added to ${result.count} playing date${result.count > 1 ? "s" : ""}.`,
+          message: `Your responses were saved for ${result.count} session${result.count > 1 ? "s" : ""}. Check each status below.`,
         });
         setSelectedIds(new Set());
-      } else {
+        } else {
         setFeedback({
           type: "error",
           message: result.error || "Failed to join selected dates.",
         });
-      }
+        }
+      } catch { setFeedback({ type: "error", message: "We couldn’t join those dates. Please try again." }); }
     });
   }
 
@@ -130,7 +131,14 @@ export function YouMultiDateSelector({
     setRemovingId(sessionId);
     setFeedback(null);
 
-    const result = await removeMyRsvpAction(sessionId);
+    let result: Awaited<ReturnType<typeof removeMyRsvpAction>>;
+    try {
+      result = await removeMyRsvpAction(sessionId);
+    } catch {
+      setRemovingId(null);
+      setFeedback({ type: "error", message: "We couldn’t remove your response. Please try again." });
+      return;
+    }
     setRemovingId(null);
 
     if (result.success) {
@@ -212,7 +220,7 @@ export function YouMultiDateSelector({
             margin: "5px 0 0",
             lineHeight: 1.45,
           }}>
-            Check multiple dates below and tap <strong>Add Me</strong> to add yourself to all of them at once.
+            Check multiple dates below and tap <strong>Join selected sessions</strong> to add yourself to all of them at once.
           </p>
         </div>
       </div>
@@ -519,7 +527,7 @@ export function YouMultiDateSelector({
                       fontSize: 11,
                       fontWeight: 800,
                     }}>
-                      Added ✓
+                      You’re going ✓
                     </span>
                     <button
                       type="button"
@@ -552,7 +560,7 @@ export function YouMultiDateSelector({
                       fontSize: 11,
                       fontWeight: 800,
                     }}>
-                      Waitlisted
+                      You’re on the waitlist
                     </span>
                     <button
                       type="button"
@@ -621,8 +629,8 @@ export function YouMultiDateSelector({
             {isPending
               ? "Adding me to dates..."
               : (selectedIds.size === 0
-                ? "Select dates above to Add Me"
-                : `Add Me to ${selectedIds.size} Selected Date${selectedIds.size > 1 ? "s" : ""}`)}
+                ? "Select dates above to join"
+                : `Join ${selectedIds.size} Selected Session${selectedIds.size > 1 ? "s" : ""}`)}
           </span>
           {selectedIds.size > 0 && <span>→</span>}
         </button>

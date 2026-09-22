@@ -7,18 +7,18 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   let user = null;
   try {
     user = await getCurrentUser();
-  } catch (err: any) {
-    if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {
+  } catch (err: unknown) {
+    const error = err as { digest?: string; message?: string };
+    if (error?.digest === "DYNAMIC_SERVER_USAGE" || error?.message?.includes("Dynamic server usage")) {
       throw err;
     }
     console.error("[MainLayout] Failed to load user:", err);
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div className="app-shell" style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <TopNav user={user} />
       <main>{children}</main>
     </div>
   );
 }
-

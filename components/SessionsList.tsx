@@ -98,7 +98,7 @@ export function SessionsList({
   const regularSessions = showHeroCard ? filteredSessions.slice(1) : filteredSessions;
 
   return (
-    <div>
+    <div style={{ minWidth: 0 }}>
       {/* Month Bubble Filter Bar */}
       {monthOptions.length > 1 && (
         <div style={{ marginBottom: 12 }}>
@@ -107,7 +107,7 @@ export function SessionsList({
               display: "flex",
               gap: 8,
               overflowX: "auto",
-              padding: "0 20px 6px",
+              padding: "0 0 6px",
               scrollbarWidth: "none",
               msOverflowStyle: "none",
               WebkitOverflowScrolling: "touch",
@@ -198,8 +198,9 @@ export function SessionsList({
 
       {/* Hero card if applicable */}
       {heroSession && (
-        <div style={{ padding: "0 20px 8px" }}>
+        <div style={{ padding: "0 0 8px" }}>
           <SessionCard
+            key={`${heroSession.id}-${myStatusBySession[heroSession.id] ?? "none"}-${inCountBySession[heroSession.id] ?? 0}`}
             session={heroSession}
             inCount={inCountBySession[heroSession.id] ?? 0}
             userStatus={myStatusBySession[heroSession.id] ?? null}
@@ -213,7 +214,7 @@ export function SessionsList({
       {/* Section label */}
       <div
         style={{
-          padding: "12px 20px 6px",
+          padding: "12px 0 6px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -259,10 +260,10 @@ export function SessionsList({
           No sessions found for this month.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 11, padding: "0 20px 20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 11, padding: "0 0 20px" }}>
           {regularSessions.map((session) => (
             <SessionCard
-              key={session.id}
+            key={`${session.id}-${myStatusBySession[session.id] ?? "none"}-${inCountBySession[session.id] ?? 0}`}
               session={session}
               inCount={inCountBySession[session.id] ?? 0}
               userStatus={myStatusBySession[session.id] ?? null}

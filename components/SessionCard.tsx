@@ -18,8 +18,8 @@ interface Props {
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  IN:       { label: "Added ✓",    color: "var(--in)" },
-  WAITLIST: { label: "Waitlisted", color: "var(--maybe)" },
+  IN:       { label: "You’re going ✓",    color: "var(--in)" },
+  WAITLIST: { label: "You’re on the waitlist", color: "var(--maybe)" },
   MAYBE:    { label: "Maybe",      color: "var(--maybe)" },
   OUT:      { label: "Not going",  color: "var(--out)" },
 };
@@ -73,6 +73,7 @@ export function SessionCard({
   const [inCount, setInCount] = useState<number>(initialInCount);
   const [isPending, startTransition] = useTransition();
   const [authOpen, setAuthOpen] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   const date = new Date(session.date);
   const cap = session.max_capacity;
@@ -89,26 +90,31 @@ export function SessionCard({
       return;
     }
 
+    setFeedback(null);
     startTransition(async () => {
-      const prev = status;
-      const res = await updateRsvp(session.id, "IN");
-      if (res.status) {
-        setStatus(res.status);
-        if (prev !== "IN" && res.status === "IN") {
-          setInCount((c) => c + 1);
-        }
-      }
+      try {
+        const prev = status;
+        const res = await updateRsvp(session.id, "IN");
+        if (res.error) { setFeedback(res.error); return; }
+        if (res.status) { setStatus(res.status); if (prev !== "IN" && res.status === "IN") setInCount((c) => c + 1); }
+      } catch { setFeedback("We couldn’t save your response. Please try again."); }
     });
   }
 
   if (isHero) {
+    // Always surface the concrete date of the next session so it is never
+    // identified by its weekday alone. "Today"/"Tomorrow" are only hints
+    // prefixed to the full date.
+    const playDate = date.toLocaleDateString("en-GB", {
+      weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
+    });
     const when = (() => {
       const todayUTC = new Date(); todayUTC.setUTCHours(0,0,0,0);
       const dUTC = new Date(date); dUTC.setUTCHours(0,0,0,0);
-      const diff = (dUTC.getTime() - todayUTC.getTime()) / 86400000;
-      if (diff === 0) return "Today";
-      if (diff === 1) return "Tomorrow";
-      return date.toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" });
+      const diff = Math.round((dUTC.getTime() - todayUTC.getTime()) / 86400000);
+      if (diff === 0) return `Today · ${playDate}`;
+      if (diff === 1) return `Tomorrow · ${playDate}`;
+      return playDate;
     })();
 
     return (
@@ -161,11 +167,12 @@ export function SessionCard({
             <div style={{ pointerEvents: "none" }}>
               <CourtMeter session={session} confirmedCount={inCount} compact />
             </div>
-            {status === "IN" ? (
+            {feedback && <div role="alert" style={{ position: "absolute", bottom: 52, left: 18, right: 18, color: "var(--out)", background: "var(--surface)", padding: "6px 8px", borderRadius: 6, fontSize: 12, pointerEvents: "auto" }}>{feedback}</div>}
+            {status === "IN" || status === "WAITLIST" ? (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px",
-                borderRadius: 999, background: "color-mix(in srgb, var(--in) 16%, transparent)",
-                color: "var(--in)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13 }}>
-                Added ✓
+                borderRadius: 999, background: `color-mix(in srgb, ${status === "WAITLIST" ? "var(--maybe)" : "var(--in)"} 16%, transparent)`,
+                color: status === "WAITLIST" ? "var(--maybe)" : "var(--in)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13 }}>
+                {status === "WAITLIST" ? "You’re on the waitlist" : "You’re going ✓"}
               </span>
             ) : (
               <button
@@ -191,7 +198,7 @@ export function SessionCard({
                   opacity: isPending ? 0.7 : 1,
                 }}
               >
-                <span>{isPending ? "Adding..." : (full ? "Waitlist" : "Add Me")}</span>
+                <span>{isPending ? "Saving…" : (full ? "Join waitlist" : "Join session")}</span>
               </button>
             )}
           </div>
@@ -200,7 +207,7 @@ export function SessionCard({
           isOpen={authOpen}
           onClose={() => setAuthOpen(false)}
           initialMode="signup"
-          returnTo="/sessions"
+          returnTo={`/sessions/${session.id}`}
         />
       </>
     );
@@ -262,6 +269,7 @@ export function SessionCard({
           </div>
         </div>
         <div style={{ marginTop: 11, paddingTop: 10, borderTop: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 2 }}>
+          {feedback && <div role="alert" style={{ color: "var(--out)", fontSize: 12, fontWeight: 700 }}>{feedback}</div>}
           {statusMeta ? (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px",
               borderRadius: 999, background: `color-mix(in srgb, ${statusMeta.color} 14%, transparent)`,
@@ -274,7 +282,7 @@ export function SessionCard({
             </span>
           )}
 
-          {status !== "IN" ? (
+          {status !== "IN" && status !== "WAITLIST" ? (
             <button
               type="button"
               onClick={handleQuickAccept}
@@ -298,11 +306,11 @@ export function SessionCard({
                 opacity: isPending ? 0.7 : 1,
               }}
             >
-              <span>{isPending ? "Adding..." : (full ? "Waitlist" : "Add Me")}</span>
+              <span>{isPending ? "Saving…" : (full ? "Join waitlist" : "Join session")}</span>
             </button>
           ) : (
             <span style={{ fontSize: 12, fontFamily: "var(--font-body)", fontWeight: 700, color: "var(--faint)" }}>
-              Tap to view details →
+              {status === "WAITLIST" ? "View position →" : "View details →"}
             </span>
           )}
         </div>
@@ -311,7 +319,7 @@ export function SessionCard({
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
         initialMode="signup"
-        returnTo="/sessions"
+        returnTo={`/sessions/${session.id}`}
       />
     </>
   );

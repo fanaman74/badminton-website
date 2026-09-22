@@ -3,6 +3,7 @@ import { sql, type Session, type RsvpStatus, type Profile } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/auth";
 import { HeroBanner } from "@/components/HeroBanner";
 import { SessionsList } from "@/components/SessionsList";
+import { RetryButton } from "@/components/RetryButton";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function SessionsPage() {
     sessions = (await sql`
       SELECT *
       FROM sessions
-      WHERE status = 'UPCOMING'
+      WHERE status = 'UPCOMING' AND date >= ((CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date AT TIME ZONE 'UTC')
       ORDER BY date ASC;
     `) as Session[];
 
@@ -54,12 +55,13 @@ export default async function SessionsPage() {
       FROM profiles;
     `) as { count: number }[];
     memberCount = countRows[0]?.count ?? 0;
-  } catch (err: any) {
-    if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {
+  } catch (err: unknown) {
+    const error = err as { digest?: string; message?: string };
+    if (error?.digest === "DYNAMIC_SERVER_USAGE" || error?.message?.includes("Dynamic server usage")) {
       throw err;
     }
     console.error("[SessionsPage] Database error:", err);
-    dbError = err?.message || "Failed to connect to database";
+    dbError = error?.message || "Failed to connect to database";
   }
 
   if (dbError) {
@@ -87,7 +89,7 @@ export default async function SessionsPage() {
               letterSpacing: "-0.02em",
             }}
           >
-            Database Setup Required
+            Sessions are temporarily unavailable
           </h2>
           <p
             style={{
@@ -98,62 +100,22 @@ export default async function SessionsPage() {
               textAlign: "center",
             }}
           >
-            The website is deployed, but cannot communicate with the database.
+            We couldn’t load the latest sessions. Please try again in a moment.
           </p>
 
-          <div
-            style={{
-              padding: "12px 16px",
-              background: "rgba(239, 68, 68, 0.08)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              borderRadius: 10,
-              fontSize: 13,
-              fontFamily: "monospace",
-              color: "#ef4444",
-              marginBottom: 24,
-              wordBreak: "break-word",
-            }}
-          >
-            {dbError}
-          </div>
-
-          <div
-            style={{
-              background: "var(--bg)",
-              border: "1px solid var(--line)",
-              borderRadius: 10,
-              padding: "16px",
-              fontSize: 13,
-              lineHeight: 1.6,
-              color: "var(--ink)",
-              marginBottom: 24,
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Next Steps in Railway:</div>
-            <ol style={{ paddingLeft: 20, margin: 0 }}>
-              <li>Open your project on <strong>Railway</strong>.</li>
-              <li>Go to <strong>Variables</strong> tab.</li>
-              <li>Ensure <code>DATABASE_URL</code> is added with your Neon connection string.</li>
-              <li>Save and redeploy.</li>
-            </ol>
-          </div>
-
           <div style={{ textAlign: "center" }}>
-            <Link
-              href="/setup"
+            <RetryButton
               style={{
                 display: "inline-block",
                 padding: "10px 24px",
                 background: "var(--accent)",
-                color: "#fff",
+                color: "var(--accent-ink)",
                 borderRadius: 10,
                 textDecoration: "none",
                 fontWeight: 600,
                 fontSize: 14,
               }}
-            >
-              Open Setup Wizard
-            </Link>
+            >Try again</RetryButton>
           </div>
         </div>
       </div>
@@ -179,7 +141,7 @@ export default async function SessionsPage() {
       <HeroBanner name={profile?.name ?? "Player"} memberCount={memberCount} isGuest={!userId} />
 
       {/* Sessions header row */}
-      <div style={{ padding: "16px 20px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <div className="page-shell" style={{ paddingTop: 16, paddingBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22,
           letterSpacing: "-0.02em", color: "var(--ink)" }}>Sessions</div>
         {isAdmin && (
@@ -206,13 +168,15 @@ export default async function SessionsPage() {
         )}
       </div>
 
-      <SessionsList
-        sessions={list}
-        inCountBySession={inCountBySession}
-        myStatusBySession={myStatusBySession}
-        isAdmin={isAdmin}
-        isAuthenticated={!!userId}
-      />
+      <div className="page-shell content-grid">
+        <div><SessionsList sessions={list} inCountBySession={inCountBySession} myStatusBySession={myStatusBySession} isAdmin={isAdmin} isAuthenticated={!!userId} /></div>
+        <aside className="club-info-card" aria-labelledby="club-info-title">
+          <p className="eyebrow" style={{ marginBottom: 6 }}>About the club</p>
+          <h2 id="club-info-title" style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 22 }}>Play together</h2>
+          <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.5, margin: "8px 0 14px" }}>All abilities are welcome for a bit of fitness and fun.</p>
+          <div style={{ display: "grid", gap: 8, color: "var(--ink)", fontSize: 13, fontWeight: 700 }}><span>🏟️ Three courts at the VUB</span><span>⏰ Thursdays · 19:00–20:00</span><span>✉️ <a href="mailto:marika.vernon@yahoo.co.uk" style={{ color: "inherit" }}>Contact Marika</a></span></div>
+        </aside>
+      </div>
     </div>
   );
 }

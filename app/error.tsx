@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 
 export default function GlobalError({
   error,
@@ -78,26 +77,8 @@ export default function GlobalError({
             marginBottom: 24,
           }}
         >
-          The server encountered an error while processing this request. This often happens if the{" "}
-          <strong style={{ color: "#38bdf8" }}>DATABASE_URL</strong> environment variable is not configured on Railway.
+          We couldn’t load this page right now. Please try again.
         </p>
-
-        {error?.digest && (
-          <div
-            style={{
-              padding: "8px 12px",
-              background: "rgba(0,0,0,0.2)",
-              borderRadius: 8,
-              fontSize: 12,
-              fontFamily: "monospace",
-              color: "var(--faint, #64748b)",
-              marginBottom: 24,
-              wordBreak: "break-all",
-            }}
-          >
-            Error Digest: {error.digest}
-          </div>
-        )}
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button
@@ -107,16 +88,16 @@ export default function GlobalError({
               borderRadius: 10,
               border: "none",
               background: "var(--accent, #3b82f6)",
-              color: "#fff",
+              color: "var(--accent-ink, #1C2400)",
               fontWeight: 600,
               fontSize: 14,
               cursor: "pointer",
             }}
           >
-            Try Again
+            Try again
           </button>
-          <Link
-            href="/setup"
+          <button
+            onClick={() => { window.location.href = "/sessions"; }}
             style={{
               padding: "10px 20px",
               borderRadius: 10,
@@ -125,13 +106,10 @@ export default function GlobalError({
               color: "var(--ink, #f8fafc)",
               fontWeight: 600,
               fontSize: 14,
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
             }}
           >
-            Setup Guide
-          </Link>
+            Back to sessions
+          </button>
         </div>
       </div>
     </div>

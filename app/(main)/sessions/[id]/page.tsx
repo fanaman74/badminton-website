@@ -97,7 +97,7 @@ export default async function SessionDetailPage({ params }: Props) {
 
   const inCount = grouped.IN.length;
   const isFull = inCount >= s.max_capacity;
-  const courtsNeeded = Math.max(1, Math.ceil(inCount / 4));
+  const courtsNeeded = Math.ceil(inCount / 4);
   const spots = s.max_capacity - inCount;
 
   const date = new Date(s.date);
@@ -111,9 +111,9 @@ export default async function SessionDetailPage({ params }: Props) {
   const isAdmin = profileRows[0]?.role === "ADMIN";
 
   return (
-    <div style={{ minHeight: "100%", background: "var(--bg)", paddingBottom: 140 }}>
+    <div style={{ minHeight: "100%", background: "var(--bg)", paddingBottom: 190 }}>
       {/* Top bar */}
-      <div style={{ padding: "48px 16px 10px", display: "flex", alignItems: "center",
+      <div className="page-shell" style={{ paddingTop: 18, paddingBottom: 10, display: "flex", alignItems: "center",
         justifyContent: "space-between", background: "var(--bg)", borderBottom: "1px solid var(--line)" }}>
         <Link href="/sessions" style={{
           width: 42, height: 42, borderRadius: 999, border: "1px solid var(--line)",
@@ -141,7 +141,7 @@ export default async function SessionDetailPage({ params }: Props) {
         ) : <div style={{ width: 42 }} />}
       </div>
 
-      <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 13 }}>
+      <div className="page-shell" style={{ paddingTop: 16, paddingBottom: 28, display: "flex", flexDirection: "column", gap: 13 }}>
         {/* Hero row */}
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           <div style={{
@@ -225,6 +225,7 @@ export default async function SessionDetailPage({ params }: Props) {
           border: "1px solid var(--line)",
           boxShadow: "0 1px 2px rgba(20,18,12,.04), 0 8px 22px -16px rgba(20,18,12,.30)",
         }}>
+          {rsvpRows.length === 0 && <p style={{ padding: "18px 0 8px", margin: 0, color: "var(--muted)", fontSize: 14 }}>No players yet. Be the first to join.</p>}
           {(["IN", "WAITLIST", "MAYBE", "OUT"] as const).map((grp) => {
             const players = grouped[grp];
             if (!players.length) return null;
@@ -239,6 +240,7 @@ export default async function SessionDetailPage({ params }: Props) {
                     {players.length}
                   </span>
                 </div>
+                {grp === "WAITLIST" && <p style={{ margin: "0 0 8px", color: "var(--muted)", fontSize: 12.5, lineHeight: 1.4 }}>Players move up in this order when a confirmed place opens.</p>}
                 <div style={{ borderTop: "1px solid var(--line)" }}>
                   {players.map((p, i) => {
                     const isYou = p.user_id === userId;
@@ -303,7 +305,7 @@ export default async function SessionDetailPage({ params }: Props) {
         />
       </div>
 
-      <RsvpButtons sessionId={id} currentStatus={myStatus} isFull={isFull} isAuthenticated={!!userId} />
+      <RsvpButtons key={`${id}-${myStatus ?? "none"}`} sessionId={id} currentStatus={myStatus} isFull={isFull} isAuthenticated={!!userId} />
     </div>
   );
 }

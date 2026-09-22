@@ -2,20 +2,22 @@
 
 /* ── Design tokens (Energy theme) ──────────────────────────── */
 :root {
+  --mobile-nav-offset: 0px;
   --bg: #F1EFE6;
   --surface: #FFFFFF;
   --surface-2: #FBF9F3;
   --ink: #17150F;
-  --muted: #7C7560;
-  --faint: #A8A18C;
+  --muted: #5F594A;
+  --faint: #706957;
   --line: #E9E5D8;
-  --brand: #FF5A1F;
+  --brand: #172033;
   --brand-ink: #FFFFFF;
   --accent: #C6F03C;
   --accent-ink: #1C2400;
-  --in: #1FA463;
-  --maybe: #E08A1E;
-  --out: #D8463B;
+  --in: #167248;
+  --maybe: #956116;
+  --out: #B3261E;
+  --focus: #17304A;
   --r-sm: 12px;
   --r-md: 18px;
   --r-lg: 26px;
@@ -49,6 +51,16 @@
 
 html, body, #__next { height: 100%; }
 
+*:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+input:focus-visible { outline: 3px solid var(--focus) !important; outline-offset: 2px; }
+
+.topnav :focus-visible,
+.guest-hero-content :focus-visible { outline-color: var(--accent); }
+
 body {
   background-color: var(--bg);
   color: var(--ink);
@@ -57,9 +69,42 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* hide scrollbars */
-::-webkit-scrollbar { width: 0; height: 0; }
-
 button { font-family: inherit; cursor: pointer; }
 
 input::placeholder { color: var(--faint); }
+section[id] { scroll-margin-top: 76px; }
+
+.page-shell {
+  width: min(100% - 32px, 1180px);
+  margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+  :root { --mobile-nav-offset: calc(76px + env(safe-area-inset-bottom)); }
+  .page-shell { width: min(100% - 32px, 680px); }
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: start;
+}
+.content-grid > * { min-width: 0; }
+
+.club-info-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+}
+
+@media (max-width: 900px) {
+  .content-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767px) {
+  .content-grid { gap: 12px; }
+  .club-info-card { padding: 16px; }
+}

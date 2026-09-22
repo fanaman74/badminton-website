@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { emailAuthAction, requestEmailOtpAction, verifyEmailOtpAction } from "@/lib/actions/auth";
 
 interface Props {
@@ -13,7 +13,9 @@ interface Props {
 
 const ADMIN_EMAILS = ["fredanaman@gmail.com", "marika.vernon@yahoo.co.uk"];
 
-export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode, returnTo = "/sessions" }: Props) {
+function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, returnTo = "/sessions" }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
   const [mode, setMode] = useState<"signup" | "signin">(initialMode || defaultMode);
   const [step, setStep] = useState<"email" | "otp">("email");
 
@@ -25,6 +27,26 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpSuccessMessage, setOtpSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    previouslyFocused.current = document.activeElement as HTMLElement;
+    const focusable = dialogRef.current?.querySelector<HTMLElement>("button, a[href], input, [tabindex]:not([tabindex='-1'])");
+    focusable?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); onClose(); return; }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const items = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("button, a[href], input, [tabindex]:not([tabindex='-1'])")).filter((item) => !item.hasAttribute("disabled"));
+      if (!items.length) return;
+      const first = items[0]; const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => { document.removeEventListener("keydown", handleKeyDown); document.body.style.overflow = previousOverflow; previouslyFocused.current?.focus(); };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -96,6 +118,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
   return (
     <div
       onClick={onClose}
+      onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}
       style={{
         position: "fixed",
         inset: 0,
@@ -110,12 +133,18 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
         style={{
           background: "var(--surface)",
           borderRadius: "var(--r-lg)",
           padding: "28px 24px",
           maxWidth: 400,
           width: "100%",
+          maxHeight: "min(640px, calc(100vh - 32px))",
+          overflowY: "auto",
           border: "1px solid var(--line)",
           boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
           position: "relative",
@@ -123,7 +152,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
       >
         {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Close sign in dialog"
           style={{
             position: "absolute",
             top: 16,
@@ -143,7 +174,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 36, marginBottom: 6 }}>🏸</div>
-          <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, color: "var(--ink)", margin: 0 }}>
+          <h2 id="auth-modal-title" style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, color: "var(--ink)", margin: 0 }}>
             {step === "otp" ? "Enter verification code" : mode === "signup" ? "Join VUB Smashers" : "Welcome Back"}
           </h2>
           <p style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 13, color: "var(--muted)", marginTop: 4, lineHeight: 1.4 }}>
@@ -172,7 +203,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
             >
               <button
                 type="button"
-                onClick={() => { setMode("signup"); setError(null); }}
+                  onClick={() => { setMode("signup"); setStep("email"); setError(null); }}
+                  aria-pressed={mode === "signup"}
                 style={{
                   padding: "7px 0",
                   border: "none",
@@ -190,7 +222,8 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
               </button>
               <button
                 type="button"
-                onClick={() => { setMode("signin"); setError(null); }}
+                  onClick={() => { setMode("signin"); setStep("email"); setError(null); }}
+                  aria-pressed={mode === "signin"}
                 style={{
                   padding: "7px 0",
                   border: "none",
@@ -340,7 +373,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
               )}
 
               {error && (
-                <div
+                  <div role="alert"
                   style={{
                     background: "color-mix(in srgb, var(--out) 10%, transparent)",
                     border: "1px solid color-mix(in srgb, var(--out) 30%, transparent)",
@@ -380,8 +413,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
                 </button>
               ) : (
                 <button
-                  type="button"
-                  onClick={() => handleSendOtp()}
+                  type="submit"
                   disabled={isLoading}
                   style={{
                     width: "100%",
@@ -414,7 +446,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
           /* Step 2: OTP Verification */
           <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {otpSuccessMessage && (
-              <div
+                <div role="status" aria-live="polite"
                 style={{
                   background: "color-mix(in srgb, var(--in) 12%, transparent)",
                   border: "1px solid color-mix(in srgb, var(--in) 35%, transparent)",
@@ -476,7 +508,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
             </div>
 
             {error && (
-              <div
+              <div role="alert"
                 style={{
                   background: "color-mix(in srgb, var(--out) 10%, transparent)",
                   border: "1px solid color-mix(in srgb, var(--out) 30%, transparent)",
@@ -554,6 +586,11 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signup", initialMode
       </div>
     </div>
   );
+}
+
+export function AuthModal(props: Props) {
+  if (!props.isOpen) return null;
+  return <AuthDialog key={`${props.initialMode ?? props.defaultMode ?? "signup"}:${props.returnTo ?? "/sessions"}`} {...props} />;
 }
 
 function GoogleIcon() {
