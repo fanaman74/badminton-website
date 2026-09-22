@@ -1,20 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Schibsted_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthFlagsProvider } from "@/components/AuthFlags";
 import { isAdminPasswordConfigured } from "@/lib/admin";
 
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+// Self-hosted variable fonts (latin subset).
+//
+// These used to come from next/font/google, which fetches the font files from
+// Google during the build. That fetch failed intermittently here and in CI
+// ("next/font/google queries have exactly one entry"), taking whole deploys down
+// with it. Shipping the .woff2 files in the repo removes that build-time network
+// dependency entirely — and is faster, since only the latin subset we need is
+// downloaded, and it is served from our own origin.
+//
+// Both are variable fonts, so a single weight range file covers every weight the
+// UI uses (Archivo 100-900, Schibsted Grotesk 400-900).
+const archivo = localFont({
+  src: "./fonts/archivo-latin-variable.woff2",
+  weight: "100 900",
+  style: "normal",
   variable: "--font-archivo",
   display: "swap",
 });
 
-const schibsted = Schibsted_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const schibsted = localFont({
+  src: "./fonts/schibsted-grotesk-latin-variable.woff2",
+  weight: "400 900",
+  style: "normal",
   variable: "--font-schibsted",
   display: "swap",
 });
