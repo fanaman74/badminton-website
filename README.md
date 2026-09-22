@@ -8,7 +8,7 @@ A mobile-first web app to manage your badminton team: schedule sessions, track R
 - **RSVP & Waitlist System**: Mark yourself as "In", "Out", or "Maybe" with automatic waitlist and promotion.
 - **Court Calculator**: Interactive court visualizer (`CourtMeter`) showing capacity based on confirmed players.
 - **Player Lists & Admin Notes**: See who is going, waitlisted, or tentative, plus pin admin notices.
-- **Email Notifications**: Confirmation emails via Resend when RSVPs are updated or waitlist promotions occur.
+- **Email Notifications**: Confirmation emails via Resend when RSVPs are updated or waitlist promotions occur, with a per-member on/off toggle in the profile section (login codes are always sent).
 - **Admin Controls**: Create and edit sessions, configure weekly court defaults, and manage player roles.
 
 ## Tech Stack

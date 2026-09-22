@@ -45,6 +45,35 @@ export async function updateProfileAction(
   return { success: true };
 }
 
+/**
+ * Toggles the RSVP confirmation emails for the signed-in member.
+ * Login codes are transactional and are always sent, regardless of this setting.
+ */
+export async function updateEmailNotificationsAction(
+  enabled: boolean
+): Promise<{ error?: string; success?: boolean }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  if (typeof enabled !== "boolean") {
+    return { error: "Invalid value" };
+  }
+
+  try {
+    await sql`
+      UPDATE profiles
+      SET email_notifications = ${enabled}
+      WHERE id = ${userId};
+    `;
+  } catch (err) {
+    console.error("[updateEmailNotificationsAction] Failed to save preference:", err);
+    return { error: "Could not save your preference. Please try again." };
+  }
+
+  revalidatePath("/you");
+  return { success: true };
+}
+
 export async function updateUserRoleAction(
   targetUserId: string,
   newRole: "ADMIN" | "PLAYER"

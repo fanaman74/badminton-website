@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useActionState } from "react";
-import { updateProfileAction } from "@/lib/actions/profile";
+import { useState, useEffect, useActionState, useTransition } from "react";
+import { updateProfileAction, updateEmailNotificationsAction } from "@/lib/actions/profile";
 
 interface ProfileEditFormProps {
   name: string;
   email: string;
   userId: string;
   isAdmin: boolean;
+  emailNotifications: boolean;
 }
 
 export function ProfileEditForm({
@@ -15,8 +16,13 @@ export function ProfileEditForm({
   email: initialEmail,
   userId,
   isAdmin,
+  emailNotifications: initialEmailNotifications,
 }: ProfileEditFormProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [notificationsOn, setNotificationsOn] = useState(initialEmailNotifications);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [notificationSaved, setNotificationSaved] = useState(false);
+  const [isSavingNotification, startNotificationTransition] = useTransition();
   const [state, formAction, isPending] = useActionState(
     updateProfileAction,
     undefined
@@ -31,6 +37,29 @@ export function ProfileEditForm({
 
   const handleCancel = () => {
     setIsEditing(false);
+  };
+
+  const handleToggleNotifications = () => {
+    const next = !notificationsOn;
+    setNotificationsOn(next); // optimistic — reverted if saving fails
+    setNotificationError(null);
+    setNotificationSaved(false);
+
+    startNotificationTransition(async () => {
+      try {
+        const res = await updateEmailNotificationsAction(next);
+        if (res.error) {
+          setNotificationsOn(!next);
+          setNotificationError(res.error);
+          return;
+        }
+        setNotificationSaved(true);
+        setTimeout(() => setNotificationSaved(false), 2500);
+      } catch {
+        setNotificationsOn(!next);
+        setNotificationError("We couldn’t save your preference. Please try again.");
+      }
+    });
   };
 
   if (isEditing) {
@@ -284,6 +313,65 @@ export function ProfileEditForm({
           ⚙️ Admin
         </div>
       )}
+
+      <div style={{ borderTop: "1px solid var(--line)", paddingTop: 14, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 13.5, color: "var(--ink)" }}>
+              Email notifications
+            </div>
+            <div style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 12, color: "var(--muted)", marginTop: 3, lineHeight: 1.4 }}>
+              Get a confirmation email when you join or leave a session.
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={notificationsOn}
+            aria-label="Email notifications"
+            onClick={handleToggleNotifications}
+            disabled={isSavingNotification}
+            style={{
+              flexShrink: 0,
+              width: 52,
+              height: 30,
+              borderRadius: 999,
+              border: notificationsOn ? "1.5px solid var(--in)" : "1.5px solid var(--line)",
+              background: notificationsOn ? "var(--in)" : "var(--surface-2)",
+              padding: 0,
+              position: "relative",
+              cursor: isSavingNotification ? "wait" : "pointer",
+              opacity: isSavingNotification ? 0.7 : 1,
+              transition: "background .2s ease, border-color .2s ease",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 2.5,
+                left: notificationsOn ? 25 : 2,
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: notificationsOn ? "#fff" : "var(--faint)",
+                boxShadow: "0 1px 3px rgba(0,0,0,.25)",
+                transition: "left .2s ease",
+              }}
+            />
+          </button>
+        </div>
+        {notificationError && (
+          <div role="alert" style={{ marginTop: 8, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12, color: "var(--out)" }}>
+            {notificationError}
+          </div>
+        )}
+        {notificationSaved && (
+          <div role="status" aria-live="polite" style={{ marginTop: 8, fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 12, color: "var(--in)" }}>
+            Saved
+          </div>
+        )}
+      </div>
 
       <button
         type="button"

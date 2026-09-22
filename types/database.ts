@@ -16,6 +16,7 @@ export interface Database {
           email: string | null;
           role: "ADMIN" | "PLAYER";
           balance: number;
+          email_notifications: boolean;
           created_at: string;
         };
         Insert: {
@@ -24,6 +25,7 @@ export interface Database {
           email?: string | null;
           role?: "ADMIN" | "PLAYER";
           balance?: number;
+          email_notifications?: boolean;
           created_at?: string;
         };
         Update: {
@@ -32,6 +34,7 @@ export interface Database {
           email?: string | null;
           role?: "ADMIN" | "PLAYER";
           balance?: number;
+          email_notifications?: boolean;
           created_at?: string;
         };
         Relationships: [];

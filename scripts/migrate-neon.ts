@@ -28,6 +28,13 @@ async function migrate() {
   `;
   console.log("  ✓ Created profiles table");
 
+  // Added after the initial release, so existing databases need the ALTER too.
+  await sql`
+    ALTER TABLE profiles
+    ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN NOT NULL DEFAULT TRUE
+  `;
+  console.log("  ✓ Ensured profiles.email_notifications");
+
   await sql`
     CREATE TABLE IF NOT EXISTS user_sessions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

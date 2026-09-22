@@ -11,11 +11,11 @@ export default async function YouPage() {
 
   const profileRows = userId
     ? ((await sql`
-        SELECT name, email, role
+        SELECT name, email, role, email_notifications
         FROM profiles
         WHERE id = ${userId}
         LIMIT 1;
-      `) as Pick<Profile, "name" | "email" | "role">[])
+      `) as Pick<Profile, "name" | "email" | "role" | "email_notifications">[])
     : [];
 
   const profile = profileRows[0];
@@ -73,7 +73,13 @@ export default async function YouPage() {
         {/* Profile Settings */}
         <section id="profile" aria-labelledby="profile-title">
           <h2 id="profile-title" style={{ fontFamily: "var(--font-display)", fontSize: 20, margin: "0 0 8px" }}>Profile</h2>
-          <ProfileEditForm name={profile?.name || ""} email={profile?.email || ""} userId={userId!} isAdmin={profile?.role === "ADMIN"} />
+          <ProfileEditForm
+            name={profile?.name || ""}
+            email={profile?.email || ""}
+            userId={userId!}
+            isAdmin={profile?.role === "ADMIN"}
+            emailNotifications={profile?.email_notifications ?? true}
+          />
         </section>
 
         {/* Sign out */}

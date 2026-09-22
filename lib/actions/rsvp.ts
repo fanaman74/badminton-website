@@ -81,15 +81,17 @@ export async function updateRsvp(
 
         // Email the promoted player
         const promotedRows = await sql`
-          SELECT name, email
+          SELECT name, email, email_notifications
           FROM profiles
           WHERE id = ${fw.user_id}
           LIMIT 1;
         `;
 
-        const promotedProfile = promotedRows[0] as { name: string; email: string | null } | undefined;
+        const promotedProfile = promotedRows[0] as
+          | { name: string; email: string | null; email_notifications: boolean }
+          | undefined;
 
-        if (promotedProfile?.email) {
+        if (promotedProfile?.email && promotedProfile.email_notifications !== false) {
           await sendRsvpConfirmationEmail({
             toEmail: promotedProfile.email,
             toName: promotedProfile.name,
@@ -111,17 +113,19 @@ export async function updateRsvp(
   revalidatePath(`/sessions/${sessionId}`);
   revalidatePath("/sessions");
 
-  // Send confirmation email to the user for any RSVP change
+  // Send confirmation email to the user for any RSVP change (unless they opted out)
   const profileRows = await sql`
-    SELECT name, email
+    SELECT name, email, email_notifications
     FROM profiles
     WHERE id = ${userId}
     LIMIT 1;
   `;
 
-  const profile = profileRows[0] as { name: string; email: string | null } | undefined;
+  const profile = profileRows[0] as
+    | { name: string; email: string | null; email_notifications: boolean }
+    | undefined;
 
-  if (profile?.email) {
+  if (profile?.email && profile.email_notifications !== false) {
     await sendRsvpConfirmationEmail({
       toEmail: profile.email,
       toName: profile.name,
@@ -237,14 +241,14 @@ export async function removeMyRsvpAction(
           LIMIT 1;
         `;
         const promotedProfileRows = await sql`
-          SELECT name, email
+          SELECT name, email, email_notifications
           FROM profiles
           WHERE id = ${promotedUserId}
           LIMIT 1;
         `;
         const s = sessionRows[0];
         const p = promotedProfileRows[0];
-        if (s && p?.email) {
+        if (s && p?.email && p.email_notifications !== false) {
           await sendRsvpConfirmationEmail({
             toEmail: p.email,
             toName: p.name,
@@ -283,12 +287,14 @@ export async function batchAcceptSessions(
   }
 
   const userProfileRows = await sql`
-    SELECT name, email
+    SELECT name, email, email_notifications
     FROM profiles
     WHERE id = ${userId}
     LIMIT 1;
   `;
-  const userProfile = userProfileRows[0] as { name: string; email: string | null } | undefined;
+  const userProfile = userProfileRows[0] as
+    | { name: string; email: string | null; email_notifications: boolean }
+    | undefined;
 
   const statuses: Record<string, RsvpStatus> = {};
   const acceptedItems: BatchSessionItem[] = [];
@@ -353,8 +359,8 @@ export async function batchAcceptSessions(
   revalidatePath("/you");
   revalidatePath("/history");
 
-  // Send confirmation email
-  if (userProfile?.email && acceptedItems.length > 0) {
+  // Send confirmation email (unless the member turned RSVP emails off)
+  if (userProfile?.email && userProfile.email_notifications !== false && acceptedItems.length > 0) {
     try {
       if (acceptedItems.length === 1) {
         const item = acceptedItems[0];
