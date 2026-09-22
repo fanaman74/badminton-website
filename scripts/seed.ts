@@ -125,7 +125,7 @@ async function seed() {
   console.log("To log in:");
   console.log("  1. Visit http://localhost:3000/auth");
   console.log("  2. Enter email: alex@example.com");
-  console.log("  3. Enter team password (INVITE_CODE)");
+  console.log("  3. Enter the 6-digit code from the email (printed in this terminal when RESEND_API_KEY is unset)");
 }
 
 seed().catch((e) => {

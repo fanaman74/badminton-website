@@ -256,6 +256,13 @@ export async function sendOtpEmail(
 </html>`;
 
   if (!client) {
+    // A missing key in production means nobody can sign in, so fail loudly
+    // instead of reporting a code that was never sent. In development we keep
+    // the console fallback so the login flow stays testable offline.
+    if (process.env.NODE_ENV === "production") {
+      console.error(`[email] RESEND_API_KEY is not set — OTP email to ${toEmail} was NOT sent`);
+      return { success: false, error: "Email service is not configured. Please contact a club admin." };
+    }
     console.warn(`[email] RESEND_API_KEY not set — OTP for ${toEmail}: ${code}`);
     return { success: true };
   }

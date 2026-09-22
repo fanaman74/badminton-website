@@ -34,12 +34,21 @@ A mobile-first web app to manage your badminton team: schedule sessions, track R
    ```
 
 2. **Environment Variables**:
-   Ensure `.env.local` has your Neon database URL and optional Resend API key:
-   ```env
-   DATABASE_URL=postgres://...
-   INVITE_CODE=smash2024
-   RESEND_API_KEY=re_...
+   Copy `.env.example` to `.env.local` and fill in the values you need:
+
+   ```bash
+   cp .env.example .env.local
    ```
+
+   - `DATABASE_URL` *(required)* — Neon pooled connection string.
+   - `DATABASE_URL_UNPOOLED` — direct connection used by the migration and seed scripts.
+   - `RESEND_API_KEY` — Resend API key. Without it no email is sent: in development the
+     login code is printed to the terminal instead, and in production email-code sign-in
+     fails with "Email service is not configured".
+   - `NEXT_PUBLIC_APP_URL` — public origin used to build callback links.
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — only needed for Google sign-in.
+
+   `.env.local` is gitignored, so your keys are never committed.
 
 3. **Run database migrations**:
    ```bash
@@ -84,8 +93,13 @@ neon.ts                      # Neon project policy configuration
 
 Deployable to Railway, Vercel, or any Node.js hosting provider:
 1. Connect your repository.
-2. Add `DATABASE_URL`, `INVITE_CODE`, and `RESEND_API_KEY` in your environment settings.
+2. Add the environment variables listed in `.env.example` (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`,
+   `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, ...) in your environment settings. On Railway
+   `RAILWAY_PUBLIC_DOMAIN` is injected automatically and used as a fallback for the public origin.
 3. Deploy.
+
+> Without `RESEND_API_KEY`, email-code sign-in fails in production with
+> "Email service is not configured" rather than silently sending nothing.
 
 ## License
 
