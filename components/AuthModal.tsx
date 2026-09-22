@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { emailAuthAction, requestEmailOtpAction, verifyEmailOtpAction } from "@/lib/actions/auth";
 import { useAdminPasswordEnabled } from "@/components/AuthFlags";
+import { isRedirectError } from "@/lib/utils";
 
 interface Props {
   isOpen: boolean;
@@ -92,12 +93,25 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
     setIsLoading(true);
     setError(null);
 
-    const res = await verifyEmailOtpAction(email, otpCode.trim(), returnTo);
-    if (res?.error) {
-      setError(res.error);
+    try {
+      const res = await verifyEmailOtpAction(email, otpCode.trim(), returnTo);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      // The action sets the session cookie and redirects to the page this modal was
+      // opened from, which does not remount us — so navigate fully to apply the new
+      // session instead of leaving the button on "Verifying…".
+      window.location.assign(returnTo);
+    } catch (err) {
+      if (isRedirectError(err)) {
+        window.location.assign(returnTo);
+        return;
+      }
+      setError("We couldn’t verify that code. Please check your connection and try again.");
+    } finally {
       setIsLoading(false);
     }
-    // On success, verifyEmailOtpAction redirects automatically!
   }
 
   async function handleAdminPasswordLogin(e: React.FormEvent) {
@@ -111,12 +125,22 @@ function AuthDialog({ isOpen, onClose, defaultMode = "signup", initialMode, retu
     fd.set("name", name);
     fd.set("returnTo", returnTo);
 
-    const res = await emailAuthAction(undefined, fd);
-    if (res?.error) {
-      setError(res.error);
+    try {
+      const res = await emailAuthAction(undefined, fd);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      window.location.assign(returnTo);
+    } catch (err) {
+      if (isRedirectError(err)) {
+        window.location.assign(returnTo);
+        return;
+      }
+      setError("We couldn’t sign you in. Please check your connection and try again.");
+    } finally {
       setIsLoading(false);
     }
-    // On success, emailAuthAction redirects automatically!
   }
 
   return (

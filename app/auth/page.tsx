@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { emailAuthAction, requestEmailOtpAction, verifyEmailOtpAction } from "@/lib/actions/auth";
 import { useAdminPasswordEnabled } from "@/components/AuthFlags";
+import { isRedirectError } from "@/lib/utils";
 
 const ADMIN_EMAILS = ["fredanaman@gmail.com", "marika.vernon@yahoo.co.uk"];
 
@@ -67,9 +68,24 @@ function AuthForm() {
     setIsLoading(true);
     setError(null);
 
-    const res = await verifyEmailOtpAction(email, otpCode.trim(), returnTo);
-    if (res?.error) {
-      setError(res.error);
+    try {
+      const res = await verifyEmailOtpAction(email, otpCode.trim(), returnTo);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      // The action sets the session cookie. Its redirect goes to the route we are
+      // often already on, which does not remount client state, so perform a full
+      // navigation to apply the new session — otherwise the button sits on
+      // "Verifying…" even though the login actually succeeded.
+      window.location.assign(returnTo);
+    } catch (err) {
+      if (isRedirectError(err)) {
+        window.location.assign(returnTo);
+        return;
+      }
+      setError("We couldn’t verify that code. Please check your connection and try again.");
+    } finally {
       setIsLoading(false);
     }
   }
@@ -85,9 +101,20 @@ function AuthForm() {
     fd.set("name", name);
     fd.set("returnTo", returnTo);
 
-    const res = await emailAuthAction(undefined, fd);
-    if (res?.error) {
-      setError(res.error);
+    try {
+      const res = await emailAuthAction(undefined, fd);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      window.location.assign(returnTo);
+    } catch (err) {
+      if (isRedirectError(err)) {
+        window.location.assign(returnTo);
+        return;
+      }
+      setError("We couldn’t sign you in. Please check your connection and try again.");
+    } finally {
       setIsLoading(false);
     }
   }
