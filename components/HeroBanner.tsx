@@ -79,6 +79,7 @@ export function HeroBanner({
             .hero-text-block {
               padding: 64px 96px 72px;
               max-width: 720px;
+              margin-inline-start: clamp(0px, calc((100% - 1200px) / 2), 320px);
             }
           }
           .hero-eyebrow {

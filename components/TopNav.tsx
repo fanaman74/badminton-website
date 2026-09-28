@@ -80,10 +80,10 @@ export function TopNav({ user }: Props) {
 
       <style>{`
         .topnav { position: sticky; top: 0; z-index: 50; background: #060c1c; border-bottom: 1px solid rgba(198,240,60,.12); }
-        .topnav-inner { width: min(100% - 32px,1180px); height: 60px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+        .topnav-inner { position: relative; width: min(100% - 32px,1180px); height: 60px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
         .topnav-logo { display: flex; align-items: center; gap: 7px; color: #fff; text-decoration: none; font: 900 17px var(--font-display); letter-spacing: -.03em; }
         .topnav-logo > span:last-child > span { color: var(--accent); }
-        .topnav-links { display: flex; align-items: center; gap: 3px; flex: 1; }
+        .topnav-links { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 3px; }
         .topnav-link { padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,.68); font-size: 13px; font-weight: 700; text-decoration: none; }
         .topnav-link:hover, .topnav-link.active { color: var(--accent); background: rgba(255,255,255,.06); }
         .topnav-actions { display: flex; align-items: center; gap: 8px; }
